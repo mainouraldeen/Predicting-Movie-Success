@@ -148,6 +148,7 @@ def dataPreprocessing():
     # ana 3ayza el key yb2a id el film w el value list of scores el momsleen gaya mn list of tuples kol wa7d etkrr kam mra w score el aflam ele etkkrr feha
     # endregion
 
+
     # region keywords Pre-processing
     # converting keywords into dictionaries
     i = 0
@@ -185,6 +186,80 @@ def dataPreprocessing():
     print(keywords_score)
     # endregion
 
+
+
+    # region Genres PreProcessing
+
+    i = 0
+    GenresWeights = []
+    Genres_dict = defaultdict(tuple)
+    for cell in wholeFile["genres"]:  # cell: group of dictionaries
+        G_weights = []
+        row_list = json.loads(cell)
+        if row_list != {}:
+            for list_element in row_list:
+                for key, value in list_element.items():
+                    if key == "id":
+                        G_weights.append(value)
+                        # each dictionary element has: #occurrencess, its score(each occurrence: add Y[i])
+                        if not Genres_dict[value]:
+                            Genres_dict[value] = (0, 0)
+
+                        Genres_dict[value] = (Genres_dict[value][0] + 1, Genres_dict[value][1] + Y[i])
+        else:
+            print("at i:", i, " EMPTY CELL!!!!!!")
+            break
+        i += 1
+        GenresWeights.append(G_weights)
+
+    Genres_score = defaultdict(float)
+    for key, (num_occurr, score) in Genres_dict.items():
+        Genres_score[key] = score / num_occurr
+    GenresColumn = []
+    for l in GenresWeights:  # each list
+        sum = 0
+        for x in l:
+            if x in Genres_score:
+                weight = Genres_score[x]
+                sum += weight
+        GenresColumn.append(sum)
+    # End
+    # region Production Companies
+    i = 0
+    ProdCompanies_Weights = []
+    ProdCompanies_dict = defaultdict(tuple)
+    for cell in wholeFile["production_companies"]:  # cell: group of dictionaries
+        ProdCom_weights = []
+        row_list = json.loads(cell)
+        if row_list != {}:
+            for list_element in row_list:
+                for key, value in list_element.items():
+                    if key == "id":
+                        ProdCom_weights.append(value)
+                        # each dictionary element has: #occurrencess, its score(each occurrence: add Y[i])
+                        if not ProdCompanies_dict[value]:
+                            ProdCompanies_dict[value] = (0, 0)
+
+                        ProdCompanies_dict[value] = (
+                        ProdCompanies_dict[value][0] + 1, ProdCompanies_dict[value][1] + Y[i])
+        else:
+            print("at i:", i, " EMPTY CELL!!!!!!")
+            break
+        i += 1
+        ProdCompanies_Weights.append(ProdCom_weights)
+
+    Production_Companies_score = defaultdict(float)
+    for key, (num_occurr, score) in ProdCompanies_dict.items():
+        Production_Companies_score[key] = score / num_occurr
+    Prod_companies_Column = []
+    for l in ProdCompanies_Weights:  # each list
+        sum = 0
+        for x in l:
+            if x in Production_Companies_score:
+                weight = Production_Companies_score[x]
+                sum += weight
+        Prod_companies_Column.append(sum)
+    # end
 
 def main():
     # region
