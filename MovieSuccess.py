@@ -18,248 +18,112 @@ Y = wholeFile["vote_average"]
 
 # endregion
 
+def normalizeData(columnName):
+    min_element = wholeFile[columnName].min()
+    max_element = wholeFile[columnName].max()
+    wholeFile[columnName] = (wholeFile[columnName] - min_element) / (max_element - min_element)
+
+def convertDictColumnToScore(columnName,uniqueKey):
+    i = 0
+    counter = 0
+    _dict = defaultdict(tuple)
+    _list = []
+    for cell in wholeFile[columnName]:  # cell: group of dictionaries
+        oneCell = json.loads(cell)
+        _list.append(oneCell)
+        if oneCell != {}:
+            counter += 1
+            for list_element in oneCell:
+                for key, value in list_element.items():
+                    if key == uniqueKey:
+                        # each dictionary element has: #occurrencess, its score(each occurrence: add Y[i])
+                        if not _dict[value]:
+                            _dict[value] = (0, 0)
+
+                        _dict[value] = (
+                        _dict[value][0] + 1, _dict[value][1] + Y[i])
+        else:
+            print("at i:", i, " EMPTY CELL!!!!!!")
+            break
+        i += 1
+
+    score_dict = defaultdict(float)
+    for key, (num_occurr, score) in _dict.items():
+        score_dict[key] = score / num_occurr
+
+    sumForOneCell = 0
+    sumForAllCells = []
+    for element in _list:
+        for list_element in element:
+            for key, value in list_element.items():
+                if key == uniqueKey:
+                    sumForOneCell += score_dict[value]
+        sumForAllCells.append(sumForOneCell)
+        sumForOneCell = 0
+    wholeFile[columnName] = sumForAllCells
+
 
 def dataPreprocessing():
 
-    # region Normalization of scaler data
-    min_element_budget = wholeFile["budget"].min()
-    max_element_budget = wholeFile["budget"].max()
-
-    min_element_popularity = wholeFile["popularity"].min()
-    max_element_popularity = wholeFile["popularity"].max()
-
-    min_element_vote_count = wholeFile["vote_count"].min()
-    max_element_vote_count = wholeFile["vote_count"].max()
-
-    min_element_vote_average = wholeFile["vote_average"].min()
-    max_element_vote_average = wholeFile["vote_average"].max()
-
-    min_element_revenue = wholeFile["revenue"].min()
-    max_element_revenue = wholeFile["revenue"].max()
-
-    min_element_run_time = wholeFile["runtime"].min()
-    max_element_run_time = wholeFile["runtime"].max()
-
-    wholeFile["budget"] = (wholeFile["budget"] - min_element_budget) / (max_element_budget - min_element_budget)
-    wholeFile["vote_average"] = (wholeFile["vote_average"] - min_element_vote_average) / (
-            max_element_vote_average - min_element_vote_average)
-    wholeFile["vote_count"] = (wholeFile["vote_count"] - min_element_vote_count) / (
-            max_element_vote_count - min_element_vote_count)
-    wholeFile["popularity"] = (wholeFile["popularity"] - min_element_popularity) / (
-            max_element_popularity - min_element_popularity)
-    wholeFile["runtime"] = (wholeFile["runtime"] - min_element_run_time) / (
-            max_element_run_time - min_element_run_time)
-    wholeFile["revenue"] = (wholeFile["revenue"] - min_element_revenue) / (max_element_revenue - min_element_revenue)
-
-    # endregion
-
     wholeFile["release_date"] = wholeFile["release_date"].astype('datetime64[ns]')
 
+    # region Normalization of scaler data
+    normalizeData("budget")
+    normalizeData("popularity")
+    normalizeData("vote_count")
+    normalizeData("vote_average")
+    normalizeData("revenue")
+    normalizeData("runtime")
+    # endregion
+
     # region cast pre-proccessing
-    i = 0
-    counter = 0
-    cast_dict = defaultdict(tuple)
-    for cell in wholeFile["cast"]:  # cell: group of dictionaries
-        cast = json.loads(cell)
-        if cast != {}:
-            counter += 1
-            for list_element in cast:  # kol dict
-                for key, value in list_element.items():
-                    if key == "id":
-                        # each dictionary element has: #occurrencess, its score(each occurrence: add Y[i])
-                        if not cast_dict[value]:
-                            cast_dict[value] = (0, 0)
-
-                        cast_dict[value] = (cast_dict[value][0] + 1, cast_dict[value][1] + Y[i])
-
-        i += 1
-
-    # assign each keyword a score
-    cast_score = defaultdict(float)
-    for key, (num_occurr, score) in cast_dict.items():
-        cast_score[key] = score / num_occurr
-
-    print("cast_score", cast_score)  # id kol momsl w score bta3o
-
-    j = 0
-    for cell in wholeFile["cast"]:  # cell: group of dictionaries
-        cell_score = 0
-        cast = json.loads(cell)
-        if cast != {}:
-            for list_element in cast:  # kol dict
-                for key, value in list_element.items():
-                    if key == "id":
-                        cell_score = cell_score + cast_dict[value][1]
-
-        wholeFile["cast"][j] = cell_score
-        j += 1
-
+    convertDictColumnToScore("cast", "id")
     # normalize cast col
-    min_element_cast = wholeFile["cast"].min()
-    max_element_cast = wholeFile["cast"].max()
-    wholeFile["cast"] = (wholeFile["cast"] - min_element_cast) / (max_element_cast - min_element_cast)
+    normalizeData("cast")
     # print("cast corr",wholeFile["cast"].corr(wholeFile['vote_average']))
     # ana 3ayza el key yb2a id el film w el value list of scores el momsleen gaya mn list of tuples kol wa7d etkrr kam mra w score el aflam ele etkkrr feha
     # endregion
 
     # region crew pre-proccessing
-    k = 0
-    counter = 0
-    crew_dict = defaultdict(tuple)
-    for cell in wholeFile["crew"]:  # cell: group of dictionaries
-        crew = json.loads(cell)
-        if crew != {}:
-            counter += 1
-            for list_element in crew:  # kol dict
-                for key, value in list_element.items():
-                    if key == "id":
-                        # each dictionary element has: #occurrencess, its score(each occurrence: add Y[i])
-                        if not crew_dict[value]:
-                            crew_dict[value] = (0, 0)
-
-                        crew_dict[value] = (crew_dict[value][0] + 1, crew_dict[value][1] + Y[k])
-        k += 1
-
-    # assign each keyword a score
-    crew_score = defaultdict(float)
-    for key, (num_occurr, score) in crew_dict.items():
-        crew_score[key] = score / num_occurr
-
-    print("crew_score", crew_score)  # id kol momsl w score bta3o
-
-    l = 0
-    for cell in wholeFile["crew"]:  # cell: group of dictionaries
-        cell_score = 0
-        crew = json.loads(cell)
-        if crew != {}:
-            for list_element in crew:  # kol dict
-                for key, value in list_element.items():
-                    if key == "id":
-                        cell_score = cell_score + crew_dict[value][1]
-
-        wholeFile["crew"][l] = cell_score
-        l += 1
-
+    convertDictColumnToScore("crew","id")
     # normalize crew col
-    min_element_crew = wholeFile["crew"].min()
-    max_element_crew = wholeFile["crew"].max()
-    wholeFile["crew"] = (wholeFile["crew"] - min_element_crew) / (max_element_crew - min_element_crew)
+    normalizeData("crew")
     # print("crew corr",wholeFile["crew"].corr(wholeFile['vote_average']))
     # ana 3ayza el key yb2a id el film w el value list of scores el momsleen gaya mn list of tuples kol wa7d etkrr kam mra w score el aflam ele etkkrr feha
     # endregion
 
-
     # region keywords Pre-processing
     # converting keywords into dictionaries
-    i = 0
-    counter = 0
-    keywords_dict = defaultdict(tuple)
-    # keywords_dict = {(float, float)}
-    # print(">>type", type(keywords_dict))
-    for cell in wholeFile["keywords"]:  # cell: group of dictionaries
-        # print("i:", i)
-        keywords = json.loads(cell)
-        if keywords != {}:
-            counter += 1
-            for list_element in keywords:
-                for key, value in list_element.items():
-                    if key == "name":
-                        # each dictionary element has: #occurrencess, its score(each occurrence: add Y[i])
-                        if not keywords_dict[value]:
-                            keywords_dict[value] = (0, 0)
-
-                        keywords_dict[value] = (keywords_dict[value][0] + 1, keywords_dict[value][1] + Y[i])
-        else:
-            print("at i:", i, " EMPTY CELL!!!!!!")
-            break
-        i += 1
-
-    # print("---------------------------")
-
-    print("#non-empty cells:", counter)
-
-    # assign each keyword a score
-    keywords_score = defaultdict(float)
-    for key, (num_occurr, score) in keywords_dict.items():
-        keywords_score[key] = score / num_occurr
-
-    print(keywords_score)
+    convertDictColumnToScore("keywords","name")
+    normalizeData("keywords")
+    #print("keywords corr",wholeFile["keywords"].corr(wholeFile['vote_average']))
+    #print(keywords_score)
     # endregion
 
+    # region spoken_languagues pre-processing
+    convertDictColumnToScore("spoken_languages","name")
+    normalizeData("spoken_languages")
+    #print("spoken languages corr",wholeFile["spoken_languages"].corr(wholeFile['vote_average']))
+    # endregion
 
+    # region genres pre-processing
+    convertDictColumnToScore("genres", "id")
+    normalizeData("genres")
+    # print("genres corr",wholeFile["genres"].corr(wholeFile['vote_average']))
+    # endregion
 
-    # region Genres PreProcessing
+    # region production_companies pre-processing
+    convertDictColumnToScore("production_companies", "id")
+    normalizeData("production_companies")
+    # print("sproduction_companies corr",wholeFile["production_companies"].corr(wholeFile['vote_average']))
+    # endregion
 
-    i = 0
-    GenresWeights = []
-    Genres_dict = defaultdict(tuple)
-    for cell in wholeFile["genres"]:  # cell: group of dictionaries
-        G_weights = []
-        row_list = json.loads(cell)
-        if row_list != {}:
-            for list_element in row_list:
-                for key, value in list_element.items():
-                    if key == "id":
-                        G_weights.append(value)
-                        # each dictionary element has: #occurrencess, its score(each occurrence: add Y[i])
-                        if not Genres_dict[value]:
-                            Genres_dict[value] = (0, 0)
+    # region production_countries pre-processing
+    convertDictColumnToScore("production_countries", "id")
+    normalizeData("production_countries")
+    # print("production_countries corr",wholeFile["production_countries"].corr(wholeFile['vote_average']))
+    # endregion
 
-                        Genres_dict[value] = (Genres_dict[value][0] + 1, Genres_dict[value][1] + Y[i])
-        else:
-            print("at i:", i, " EMPTY CELL!!!!!!")
-            break
-        i += 1
-        GenresWeights.append(G_weights)
-
-    Genres_score = defaultdict(float)
-    for key, (num_occurr, score) in Genres_dict.items():
-        Genres_score[key] = score / num_occurr
-    GenresColumn = []
-    for l in GenresWeights:  # each list
-        sum = 0
-        for x in l:
-            if x in Genres_score:
-                weight = Genres_score[x]
-                sum += weight
-        GenresColumn.append(sum)
-    # End
-    # region Production Companies
-    i = 0
-    ProdCompanies_Weights = []
-    ProdCompanies_dict = defaultdict(tuple)
-    for cell in wholeFile["production_companies"]:  # cell: group of dictionaries
-        ProdCom_weights = []
-        row_list = json.loads(cell)
-        if row_list != {}:
-            for list_element in row_list:
-                for key, value in list_element.items():
-                    if key == "id":
-                        ProdCom_weights.append(value)
-                        # each dictionary element has: #occurrencess, its score(each occurrence: add Y[i])
-                        if not ProdCompanies_dict[value]:
-                            ProdCompanies_dict[value] = (0, 0)
-
-                        ProdCompanies_dict[value] = (
-                        ProdCompanies_dict[value][0] + 1, ProdCompanies_dict[value][1] + Y[i])
-        else:
-            print("at i:", i, " EMPTY CELL!!!!!!")
-            break
-        i += 1
-        ProdCompanies_Weights.append(ProdCom_weights)
-
-    Production_Companies_score = defaultdict(float)
-    for key, (num_occurr, score) in ProdCompanies_dict.items():
-        Production_Companies_score[key] = score / num_occurr
-    Prod_companies_Column = []
-    for l in ProdCompanies_Weights:  # each list
-        sum = 0
-        for x in l:
-            if x in Production_Companies_score:
-                weight = Production_Companies_score[x]
-                sum += weight
-        Prod_companies_Column.append(sum)
-    # end
 
 def main():
     # region
@@ -273,11 +137,8 @@ def main():
     """
     # endregion
 
-    print("len wholeFile before dropna", len(wholeFile))
     wholeFile.replace(['', ' ', [[]], [], None, {}], np.nan, inplace=True)  # 3shan .drop b t-drop no.nan bs
     wholeFile.dropna(thresh=1, inplace=True)
-
-    print("len wholeFile after dropna", len(wholeFile))
 
     dataPreprocessing()
 
@@ -317,7 +178,6 @@ def main():
 main()
 
 # CAST
-
 # {"cast_id": 45, XX
 # "character": "Sam the Bellhop", XX
 # "credit_id": "52fe420dc3a36847f80001c3", XX
@@ -326,8 +186,8 @@ main()
 # "name": "Marc Lawrence", (***)
 # "order": 23} XX
 ##
-# CREW
 
+# CREW
 # {"credit_id": "5770143fc3a3683733000f3a",
 # "department": "Writing",
 # "gender": 2,
