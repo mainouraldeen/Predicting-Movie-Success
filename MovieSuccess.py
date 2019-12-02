@@ -1,36 +1,41 @@
 import json
 from collections import defaultdict
-from sklearn.model_selection import train_test_split
 import numpy as np
 import pandas as pd
-from sklearn import linear_model, metrics, feature_selection
-from sklearn.feature_selection import SelectKBest, chi2, f_regression
+from sklearn import linear_model, metrics
+from sklearn.linear_model import Lasso, Ridge, ElasticNet
+from sklearn.svm import SVR
+# from sklearn.metrics import
+from mlxtend.feature_selection import SequentialFeatureSelector as sfs
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import PolynomialFeatures
+from sklearn.feature_selection import RFE, RFECV, f_regression, SelectKBest, chi2
+import matplotlib.pyplot as plt
 
+# region Public
 
-# public
-# region
+moviesFile = pd.read_csv('Train Set/tmdb_5000_movies_train.csv', keep_default_na=True)#, na_values=[""])
+creditsFile = pd.read_csv('Train Set/tmdb_5000_credits_train.csv', keep_default_na=True)#, na_values=[""])
 
-moviesFile = pd.read_csv('Train Set/tmdb_5000_movies_train.csv', keep_default_na=False, na_values=[""])
-creditsFile = pd.read_csv('Train Set/tmdb_5000_credits_train.csv', keep_default_na=False, na_values=[""])
+# print("From public:")
+# w = pd.get_dummies(moviesFile, columns=['title', 'tagline', 'homepage'], drop_first=True)
+# print(moviesFile["title"][0])
 
 # inner y keep rl 7agat el comman fl 2 df bs
 wholeFile = pd.merge(moviesFile, creditsFile, sort=True, how='inner', left_on=['id', 'title'],
-                     right_on=['movie_id', 'title'])
-
-
+                    right_on=['movie_id', 'title'])
+# wholeFile = pd.read_csv('out.csv')
 Y = wholeFile["vote_average"]
-
-
 
 # endregion
 
 def normalizeData(columnName):
     min_element = wholeFile[columnName].min()
     max_element = wholeFile[columnName].max()
-    wholeFile[columnName] = (wholeFile[columnName] - min_element) / (max_element - min_element)
+    wholeFile[columnName] = 0.9 * (wholeFile[columnName] - min_element) / (max_element - min_element)
 
-def convertDictColumnToScore(columnName,uniqueKey):
+
+def convertDictColumnToScore(columnName, uniqueKey):
     i = 0
     counter = 0
     _dict = defaultdict(tuple)
@@ -48,7 +53,7 @@ def convertDictColumnToScore(columnName,uniqueKey):
                             _dict[value] = (0, 0)
 
                         _dict[value] = (
-                        _dict[value][0] + 1, _dict[value][1] + Y[i])
+                            _dict[value][0] + 1, _dict[value][1] + Y[i])
         else:
             print("at i:", i, " EMPTY CELL!!!!!!")
             break
@@ -69,9 +74,9 @@ def convertDictColumnToScore(columnName,uniqueKey):
         sumForOneCell = 0
     wholeFile[columnName] = sumForAllCells
 
+
 def convertStringColToScore(colName):
     i = 0
-    counter = 0
     _dict = defaultdict(tuple)
     _list = []
     for cell in wholeFile[colName]:
@@ -88,56 +93,51 @@ def convertStringColToScore(colName):
     wholeFile[colName] = lst
 
 
-
 def dataPreprocessing():
-    #region drop cols
+    # region drop cols
 
-    #endregion
+    # endregion
     wholeFile["release_date"] = wholeFile["release_date"].astype('datetime64[ns]')
-    # print(type(wholeFile["release_date"][0]))
-    # print((wholeFile["release_date"][0].year))
-
     # replace el date b-el year bs: first try.
-    wholeFile["release_date"] = [ i.year for i in wholeFile["release_date"]]
-    # print(wholeFile["release_date"])
+    wholeFile["release_date"] = [i.year for i in wholeFile["release_date"]]
 
-    # region Normalization of scaler data
+    # region Normalization of scalar data
     normalizeData("budget")
     normalizeData("popularity")
     normalizeData("vote_count")
     normalizeData("vote_average")
     normalizeData("revenue")
     normalizeData("runtime")
+
     # endregion
 
-    # region cast pre-proccessing
+    # region cast pre-processing
     convertDictColumnToScore("cast", "id")
-    # normalize cast col
     normalizeData("cast")
     # print("cast corr",wholeFile["cast"].corr(wholeFile['vote_average']))
-    # ana 3ayza el key yb2a id el film w el value list of scores el momsleen gaya mn list of tuples kol wa7d etkrr kam mra w score el aflam ele etkkrr feha
+
     # endregion
 
-    # region crew pre-proccessing
-    convertDictColumnToScore("crew","id")
+    # region crew pre-processing
+
+    convertDictColumnToScore("crew", "id")
     # normalize crew col
     normalizeData("crew")
-    # print("crew corr",wholeFile["crew"].corr(wholeFile['vote_average']))
-    # ana 3ayza el key yb2a id el film w el value list of scores el momsleen gaya mn list of tuples kol wa7d etkrr kam mra w score el aflam ele etkkrr feha
+
     # endregion
 
     # region keywords Pre-processing
     # converting keywords into dictionaries
-    convertDictColumnToScore("keywords","name")
+    convertDictColumnToScore("keywords", "name")
     normalizeData("keywords")
-    #print("keywords corr",wholeFile["keywords"].corr(wholeFile['vote_average']))
-    #print(keywords_score)
+    # print("keywords corr",wholeFile["keywords"].corr(wholeFile['vote_average']))
+
     # endregion
 
-    # region spoken_languagues pre-processing
-    convertDictColumnToScore("spoken_languages","name")
+    # region spoken_languages pre-processing
+    convertDictColumnToScore("spoken_languages", "name")
     normalizeData("spoken_languages")
-    #print("spoken languages corr",wholeFile["spoken_languages"].corr(wholeFile['vote_average']))
+    # print("spoken languages corr",wholeFile["spoken_languages"].corr(wholeFile['vote_average']))
     # endregion
 
     # region genres pre-processing
@@ -168,75 +168,161 @@ def dataPreprocessing():
     convertStringColToScore("release_date")
     normalizeData("release_date")
     # endregion
-    # print(wholeFile["release_date"].describe())
-
 
     # print(wholeFile['original_language'].corr(wholeFile['vote_average']))
 
 
 def main():
-    # region
-    """
-    The sign of the covariance can be interpreted as whether the two variables change
-    in the same direction (positive)or change in different directions (negative).
-    The magnitude of the covariance is not easily interpreted.
-    A covariance value of zero indicates that both variables are completely independent.
 
-    # print(np.cov(x, y))
-    """
-    # endregion
-    print("len of whole file before drop",len(wholeFile))
-    wholeFile.drop(labels=['original_title', 'status', 'homepage','overview','tagline', 'title', 'id', 'movie_id'], axis=1, inplace=True)
+    # print("len of whole file before drop", len(wholeFile))
+    wholeFile.drop(labels=['original_title', 'status', 'homepage', 'overview', 'tagline', 'title', 'id', 'movie_id'],
+                   axis=1, inplace=True)
     wholeFile.replace(['', ' ', [[]], [], None, {}], np.nan, inplace=True)  # 3shan .drop b t-drop no.nan bs
-    # wholeFile.dropna(inplace=True,how='any')
-    median = wholeFile['runtime'].median()
-    wholeFile['runtime'].fillna(median, inplace=True)
-    # print(wholeFile.isnull().sum())
-    print("len of whole file after drop",len(wholeFile))
+    # wholeFile.dropna(inplace=True, how='any')
 
+    median = wholeFile['runtime'].median()
+    # print("NULL before", wholeFile.isnull().sum())
+    wholeFile['runtime'].fillna(median, inplace=True)
+    # print("NULL after", wholeFile.isnull().sum())
+    # print("len of whole file after drop", len(wholeFile))
+
+    # pre-processing:
     dataPreprocessing()
 
+    # after pre-processing:
     X = wholeFile.drop(axis=1, labels="vote_average")
     Y = wholeFile["vote_average"]
 
+    # corr = wholeFile.corr()
+    # corr.style.background_gradient(cmap='coolwarm', axis=None)
 
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
-    X_train, X_validation, Y_train, Y_validation = train_test_split(X_train, Y_train, test_size=0.2)
+    # Draw correlation matrix:
+    # plt.matshow(wholeFile.corr())
+    # plt.show()
 
-    # print(wholeFile.columns.values)
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3)
+    # X_train, X_validation, Y_train, Y_validation = train_test_split(X_train, Y_train, test_size=0.2, shuffle=True)
 
-
-    # select top features
-    # top_features = wholeFile.corr().index[abs(wholeFile.corr()['vote_average'] >= 0.3)]
+    # region Select top features
+    top_features = wholeFile.corr().index[abs(wholeFile.corr()['vote_average'] >= 0.3)]
+    top_features = top_features.drop("vote_average")
+    # print("top_features using corr()")
     # print(top_features)
     # print(wholeFile["budget"].corr(wholeFile['vote_average']))
-
-    #best features
-    # top_featurs = SelectKBest(chi2,k=5).fit(X_train, Y_train)
-    # print("Top feAtures", top_featurs)
-
-    # Technique 1
-    # Multiple linear regression with all features
-    # regression = linear_model.LinearRegression()
-    # regression.fit(X_train, Y_train)
-    # predictions = regression.predict(X_validation)
-    # print("*mean_absolute_error:", metrics.mean_absolute_error(Y_validation, predictions))
-    # print("*mean_squared_error:", metrics.mean_squared_error(Y_validation, predictions))
-    # print("*root mean_squared_error:", np.sqrt(metrics.mean_squared_error(Y_validation, predictions)))
-    # print("*regression.score", regression.score(X_validation, Y_validation))
-    # # print("accu:", metrics.accuracy_score(Y_validation, predictions))
-
-    # Technique 2
-    # poly = PolynomialFeatures(2)
     #
-    # poly_fit = poly.fit_transform(X_train)
-    # poly.fit(poly_fit, Y_train)
-    # print("poly")
-    # print(metrics.mean_squared_error(Y_validation, predictions))
-    # print("poly_fit")
-    # print(poly_fit)
+    # # best features
+    # top_features = SelectKBest(chi2, k=4).fit(X_train, Y_train)
+    # print("Top features using chi2")
+    # print(top_features)
+
+    #endregion
+
+    # region Multiple linear regression with all features
+    # Technique 1
+    print("Multiple linear:")
+    regression = linear_model.LinearRegression()
+    regression.fit(X_train, Y_train)
+    # regression.fit(X_train[top_features], Y_train)
+    predictions = regression.predict(X_test)
+    # predictions = regression.predict(X_test[top_features])
+    # print("*mean_absolute_error:", metrics.mean_absolute_error(Y_test, predictions))
+    print("Accuracy:", 100 * metrics.r2_score(Y_test, predictions))
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+    # print("*root mean_squared_error:", np.sqrt(metrics.mean_squared_error(Y_test, predictions)))
+    # print("*regression.score", regression.score(X_test, Y_test))
+
+    # endregion
+    print("---------------------------------")
+
+    # region Polynomial regression
+    # Technique 2
+    print("Polynomial")
+    poly = PolynomialFeatures(3)
+    poly_fit = poly.fit_transform(X_train)
+    poly.fit(poly_fit, Y_train)
+    # print("Accuracy:", 100 * metrics.r2_score(Y_test, predictions))
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+
+    # endregion
+    print("---------------------------------")
+
+    # region SVR regression
+
+    print("SVR")
+    svr_rbf = SVR(kernel='rbf', C=1, gamma=1, epsilon=.1).fit(X_train[top_features], Y_train)
+    # svr_lin = SVR(kernel='linear', C=1).fit(X_train[top_features], Y_train)
+    # print("after second")
+    # svr_poly = SVR(kernel='poly', C=1, gamma=1, degree=2, epsilon=.1, coef0=1).fit(X_train[top_features], Y_train)
+    # print("after third")
+    # print("linear coeff", svr_lin.coef_)
+    # print("bias", svr_lin.intercept_)
+
+    predictions = svr_rbf.predict(X_test[top_features])
+    print("Accuracy:", metrics.r2_score(Y_test, predictions)*100)#np.mean(predictions == Y_validation)*100)
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+
+    # predictions = svr_lin.predict(X_test[top_features])
+    # print("**svr_lin accuracy:", metrics.r2_score(Y_test, predictions)*100)#np.mean(predictions == Y_validation)*100)
+    # print("svr_lin MSE:", metrics.mean_squared_error(Y_test, predictions), "\n")
+    #
+    # predictions = svr_poly.predict(X_test[top_features])
+    # print("**svr_poly accuracy:", metrics.r2_score(Y_test, predictions)*100)#np.mean(predictions == Y_validation)*100)
+    # print("svr_poly MSE:", metrics.mean_squared_error(Y_test, predictions))
+
+    # endregion
+    print("---------------------------------")
 
 
+    # region Lasso Regression
+
+    print("Lasso")
+
+    lasso = Lasso()
+    lasso.fit(X_train, Y_train)
+    # lasso.fit(X_train[top_features], Y_train)
+
+    # # test_score = lasso.score(X_test, Y_test)
+    # # test_score = lasso.score(X_test[top_features], Y_test)
+
+    predictions = lasso.predict(X_test)
+    # predictions = lasso.predict(X_test[top_features])
+
+    test_score = metrics.r2_score(Y_test, predictions)
+    print("Accuracy:", test_score*100)
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+
+    # endregion
+    print("---------------------------------")
+
+    #region Ridge Regression
+    print("Ridge")
+    ridge_regression = Ridge(alpha=.5)
+    # ridge_regression.fit(X_train, Y_train)
+    ridge_regression.fit(X_train[top_features], Y_train)
+    # test_score = ridge_regression.score(X_test, Y_test)
+    # test_score = ridge_regression.score(X_test[top_features], Y_test)
+    # print("Ridge regression score", test_score*100)
+    # predictions = ridge_regression.predict(X_test)
+    predictions = ridge_regression.predict(X_test[top_features])
+    print("Accuracy:", metrics.r2_score(Y_test, predictions)*100)
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+
+    # endregion
+
+    print("---------------------------------")
+    # region Elastic Regression
+    print("Elastic")
+    elastic_regression = ElasticNet(random_state=0)
+    elastic_regression.fit(X_train, Y_train)
+    # elastic_regression.fit(X_train[top_features], Y_train)
+    predictions = elastic_regression.predict(X_test)
+    # predictions = elastic_regression.predict(X_test[top_features])
+    accuracy = metrics.r2_score(Y_test, predictions)*100
+    print("Accuracy:", accuracy)
+    test_error = metrics.mean_squared_error(Y_test, predictions)
+    print("MSE:", test_error)
+
+    # endregion
 
     # c = pd.DataFrame(regression.coef_, X.columns, columns=["CCC"])
     # print("C")
@@ -245,21 +331,3 @@ def main():
 
 
 main()
-
-# CAST
-# {"cast_id": 45, XX
-# "character": "Sam the Bellhop", XX
-# "credit_id": "52fe420dc3a36847f80001c3", XX
-# "gender": 2, XX
-# "id": 3140, (***)
-# "name": "Marc Lawrence", (***)
-# "order": 23} XX
-##
-
-# CREW
-# {"credit_id": "5770143fc3a3683733000f3a",
-# "department": "Writing",
-# "gender": 2,
-# "id": 7,
-# "job": "Story",
-# "name": "Andrew Stanton"}
