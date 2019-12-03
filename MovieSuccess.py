@@ -176,48 +176,188 @@ def dataPreprocessing():
     # print(wholeFile['original_language'].corr(wholeFile['vote_average']))
 
 
-# def Svr_regression_model():
-#     # region SVR regression
-#
-#     print("SVR Kernal: rbf Top Features")
-#     svr_rbf = SVR(kernel='rbf', C=1, gamma=1, epsilon=.1).fit(X_train[top_features], Y_train)
-#     svr_lin = SVR(kernel='linear', C=1).fit(X_train[top_features], Y_train)
-#     svr_poly = SVR(kernel='poly', C=1, gamma=1, degree=2, epsilon=.1, coef0=1).fit(X_train[top_features], Y_train)
-#     # print("linear coeff", svr_lin.coef_)
-#     # print("bias", svr_lin.intercept_)
-#
-#     predictions_rbf = svr_rbf.predict(X_test[top_features])
-#     print("Accuracy:", metrics.r2_score(Y_test, predictions_rbf) * 100)  # np.mean(predictions == Y_validation)*100)
-#     print("MSE:", metrics.mean_squared_error(Y_test, predictions_rbf))
-#     print("__________________________")
-#     print("SVR Kernal: lin Top Features")
-#     predictions_lin = svr_lin.predict(X_test[top_features])
-#     print("Accuracy:", metrics.r2_score(Y_test, predictions_lin) * 100)  # np.mean(predictions == Y_validation)*100)
-#     print("MSE:", metrics.mean_squared_error(Y_test, predictions_lin))
-#     print("__________________________")
-#     print("SVR Kernal: poly Top Features")
-#     predictions_poly = svr_poly.predict(X_test[top_features])
-#     print("Accuracy:", metrics.r2_score(Y_test, predictions_poly) * 100)  # np.mean(predictions == Y_validation)*100)
-#     print("MSE:", metrics.mean_squared_error(Y_test, predictions_poly))
-#     print("__________________________")
-#     print("SVR All Features")
-#     svr_rbf = SVR(kernel='rbf', C=1, gamma=1, epsilon=.1).fit(X_train, Y_train)
-#     predictions = svr_rbf.predict(X_test)
-#     print("Accuracy:", metrics.r2_score(Y_test, predictions) * 100)  # np.mean(predictions == Y_validation)*100)
-#     print("MSE:", metrics.mean_squared_error(Y_test, predictions))
-#
-#     # predictions = svr_lin.predict(X_test[top_features])
-#     # print("**svr_lin accuracy:", metrics.r2_score(Y_test, predictions)*100)#np.mean(predictions == Y_validation)*100)
-#     # print("svr_lin MSE:", metrics.mean_squared_error(Y_test, predictions), "\n")
-#     #
-#     # predictions = svr_poly.predict(X_test[top_features])
-#     # print("**svr_poly accuracy:", metrics.r2_score(Y_test, predictions)*100)#np.mean(predictions == Y_validation)*100)
-#     # print("svr_poly MSE:", metrics.mean_squared_error(Y_test, predictions))
-#
-#     # endregion
-#     print("---------------------------------")
-#     drawFeatures(X_test, Y_test, predictions)
-def drawFeatures(X_test, Y_test, prediction):
+def drawFeatures(X_test,Y_test,prediction):
+    #region budget
+    x1 = X_test["budget"]
+    x2 = Y_test
+    label = Y_test
+    colors = ['blue', 'purple']
+
+    plt.scatter(x1, x2, c=label,cmap=matplotlib.colors.ListedColormap(colors))
+    plt.xlabel('X1', fontsize=20)
+    plt.ylabel('X2', fontsize=20)
+
+    cb = plt.colorbar()
+    loc = np.arange(0, max(label), max(label) / float(len(colors)))
+    cb.set_ticks(loc)
+    cb.set_ticklabels(['budget', 'vote_average'])
+
+    #line
+    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+    plt.show()
+    #endregion
+
+    # region genres
+    x1 = X_test["genres"]
+    x2 = Y_test
+    label = Y_test
+    colors = ['blue', 'purple']
+
+    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+    plt.xlabel('X1', fontsize=20)
+    plt.ylabel('X2', fontsize=20)
+
+    cb = plt.colorbar()
+    loc = np.arange(0, max(label), max(label) / float(len(colors)))
+    cb.set_ticks(loc)
+    cb.set_ticklabels(['genres', 'vote_average'])
+
+    # line
+    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+    plt.show()
+    # endregion
+
+    # region keywords
+    x1 = X_test["keywords"]
+    x2 = Y_test
+    label = Y_test
+    colors = ['blue', 'purple']
+
+    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+    plt.xlabel('X1', fontsize=20)
+    plt.ylabel('X2', fontsize=20)
+
+    cb = plt.colorbar()
+    loc = np.arange(0, max(label), max(label) / float(len(colors)))
+    cb.set_ticks(loc)
+    cb.set_ticklabels(['keywords', 'vote_average'])
+
+    # line
+    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+    plt.show()
+    # endregion
+
+    # region original_language
+    x1 = X_test["original_language"]
+    x2 = Y_test
+    label = Y_test
+    colors = ['blue', 'purple']
+
+    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+    plt.xlabel('X1', fontsize=20)
+    plt.ylabel('X2', fontsize=20)
+
+    cb = plt.colorbar()
+    loc = np.arange(0, max(label), max(label) / float(len(colors)))
+    cb.set_ticks(loc)
+    cb.set_ticklabels(['original_language', 'vote_average'])
+
+    # line
+    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+    plt.show()
+    # endregion
+
+    # region popularity
+    x1 = X_test["popularity"]
+    x2 = Y_test
+    label = Y_test
+    colors = ['blue', 'purple']
+
+    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+    plt.xlabel('X1', fontsize=20)
+    plt.ylabel('X2', fontsize=20)
+
+    cb = plt.colorbar()
+    loc = np.arange(0, max(label), max(label) / float(len(colors)))
+    cb.set_ticks(loc)
+    cb.set_ticklabels(['popularity', 'vote_average'])
+
+    # line
+    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+    plt.show()
+    # endregion
+
+    # region production_companies
+    x1 = X_test["production_companies"]
+    x2 = Y_test
+    label = Y_test
+    colors = ['blue', 'purple']
+
+    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+    plt.xlabel('X1', fontsize=20)
+    plt.ylabel('X2', fontsize=20)
+
+    cb = plt.colorbar()
+    loc = np.arange(0, max(label), max(label) / float(len(colors)))
+    cb.set_ticks(loc)
+    cb.set_ticklabels(['production_companies', 'vote_average'])
+
+    # line
+    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+    plt.show()
+    # endregion
+
+    # region production_countries
+    x1 = X_test["production_countries"]
+    x2 = Y_test
+    label = Y_test
+    colors = ['blue', 'purple']
+
+    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+    plt.xlabel('X1', fontsize=20)
+    plt.ylabel('X2', fontsize=20)
+
+    cb = plt.colorbar()
+    loc = np.arange(0, max(label), max(label) / float(len(colors)))
+    cb.set_ticks(loc)
+    cb.set_ticklabels(['production_countries', 'vote_average'])
+
+    # line
+    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+    plt.show()
+    # endregion
+
+    # region release_date
+    x1 = X_test["release_date"]
+    x2 = Y_test
+    label = Y_test
+    colors = ['blue', 'purple']
+
+    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+    plt.xlabel('X1', fontsize=20)
+    plt.ylabel('X2', fontsize=20)
+
+    cb = plt.colorbar()
+    loc = np.arange(0, max(label), max(label) / float(len(colors)))
+    cb.set_ticks(loc)
+    cb.set_ticklabels(['release_date', 'vote_average'])
+
+    # line
+    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+    plt.show()
+    # endregion
+
+    # region revenue
+    x1 = X_test["revenue"]
+    x2 = Y_test
+    label = Y_test
+    colors = ['blue', 'purple']
+
+    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+    plt.xlabel('X1', fontsize=20)
+    plt.ylabel('X2', fontsize=20)
+
+    cb = plt.colorbar()
+    loc = np.arange(0, max(label), max(label) / float(len(colors)))
+    cb.set_ticks(loc)
+    cb.set_ticklabels(['revenue', 'vote_average'])
+
+    # line
+    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+    plt.show()
+    # endregion
+
+    # region runtime
     x1 = X_test["runtime"]
     x2 = Y_test
     label = Y_test
@@ -233,8 +373,89 @@ def drawFeatures(X_test, Y_test, prediction):
     cb.set_ticklabels(['runtime', 'vote_average'])
 
     # line
-    plt.plot(x1, prediction, color='green', linewidth=1.5)
+    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
     plt.show()
+    # endregion
+
+    # region spoken_languages
+    x1 = X_test["spoken_languages"]
+    x2 = Y_test
+    label = Y_test
+    colors = ['blue', 'purple']
+
+    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+    plt.xlabel('X1', fontsize=20)
+    plt.ylabel('X2', fontsize=20)
+
+    cb = plt.colorbar()
+    loc = np.arange(0, max(label), max(label) / float(len(colors)))
+    cb.set_ticks(loc)
+    cb.set_ticklabels(['spoken_languages', 'vote_average'])
+
+    # line
+    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+    plt.show()
+    # endregion
+
+    # region vote_count
+    x1 = X_test["vote_count"]
+    x2 = Y_test
+    label = Y_test
+    colors = ['blue', 'purple']
+
+    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+    plt.xlabel('X1', fontsize=20)
+    plt.ylabel('X2', fontsize=20)
+
+    cb = plt.colorbar()
+    loc = np.arange(0, max(label), max(label) / float(len(colors)))
+    cb.set_ticks(loc)
+    cb.set_ticklabels(['vote_count', 'vote_average'])
+
+    # line
+    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+    plt.show()
+    # endregion
+
+    # region cast
+    x1 = X_test["cast"]
+    x2 = Y_test
+    label = Y_test
+    colors = ['blue', 'purple']
+
+    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+    plt.xlabel('X1', fontsize=20)
+    plt.ylabel('X2', fontsize=20)
+
+    cb = plt.colorbar()
+    loc = np.arange(0, max(label), max(label) / float(len(colors)))
+    cb.set_ticks(loc)
+    cb.set_ticklabels(['cast', 'vote_average'])
+
+    # line
+    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+    plt.show()
+    # endregion
+
+    # region crew
+    x1 = X_test["crew"]
+    x2 = Y_test
+    label = Y_test
+    colors = ['blue', 'purple']
+
+    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+    plt.xlabel('X1', fontsize=20)
+    plt.ylabel('X2', fontsize=20)
+
+    cb = plt.colorbar()
+    loc = np.arange(0, max(label), max(label) / float(len(colors)))
+    cb.set_ticks(loc)
+    cb.set_ticklabels(['crew', 'vote_average'])
+
+    # line
+    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+    plt.show()
+    # endregion
 
 
 def main():
@@ -306,27 +527,34 @@ def main():
 
     # endregion
     print("---------------------------------")
-
     # region Polynomial regression
-    # Technique 2
     print("Polynomial Top Features")
-    poly = PolynomialFeatures(degree=3)
-    poly_fit = poly.fit_transform(X_train[top_features])
-    poly.fit(poly_fit, Y_train)
+    # poly_features_train = PolynomialFeatures(2).fit_transform(X_train)
+    # poly_features_test = PolynomialFeatures(2).fit_transform(X_test)
 
+    poly_features_train = PolynomialFeatures(2).fit_transform(X_train[top_features])
+    poly_features_test = PolynomialFeatures(2).fit_transform(X_test[top_features])
+
+    poly_model = linear_model.LinearRegression()
+    poly_model.fit(poly_features_train, Y_train)
+
+    predictions = poly_model.predict(poly_features_test)
     print("Accuracy:", 100 * metrics.r2_score(Y_test, predictions))
     print("MSE:", metrics.mean_squared_error(Y_test, predictions))
     print("__________________________")
-    print("Polynomial All Features")
-    poly = PolynomialFeatures(degree=3)
-    poly_fit = poly.fit_transform(X_train)
-    poly.fit(poly_fit, Y_train)
 
+    print("Polynomial All Features")
+    poly_features_train = PolynomialFeatures(2).fit_transform(X_train)
+    poly_features_test = PolynomialFeatures(2).fit_transform(X_test)
+
+    poly_model = linear_model.LinearRegression()
+    poly_model.fit(poly_features_train, Y_train)
+
+    predictions = poly_model.predict(poly_features_test)
     print("Accuracy:", 100 * metrics.r2_score(Y_test, predictions))
     print("MSE:", metrics.mean_squared_error(Y_test, predictions))
-
+    drawFeatures(X_test, Y_test, predictions)
     # endregion
-    print("---------------------------------")
 
     # region SVR regression
 
@@ -340,6 +568,7 @@ def main():
     predictions_rbf = svr_rbf.predict(X_test[top_features])
     print("Accuracy:", metrics.r2_score(Y_test, predictions_rbf) * 100)  # np.mean(predictions == Y_validation)*100)
     print("MSE:", metrics.mean_squared_error(Y_test, predictions_rbf))
+    #drawFeatures(X_test, Y_test, predictions_rbf)
     print("__________________________")
     print("SVR Kernal: lin Top Features")
     predictions_lin = svr_lin.predict(X_test[top_features])
@@ -351,6 +580,7 @@ def main():
     print("Accuracy:", metrics.r2_score(Y_test, predictions_poly) * 100)  # np.mean(predictions == Y_validation)*100)
     print("MSE:", metrics.mean_squared_error(Y_test, predictions_poly))
     print("__________________________")
+
     print("SVR All Features")
     svr_rbf = SVR(kernel='rbf', C=1, gamma=1, epsilon=.1).fit(X_train, Y_train)
     predictions = svr_rbf.predict(X_test)
@@ -367,7 +597,27 @@ def main():
 
     # endregion
     print("---------------------------------")
-    drawFeatures(X_test, Y_test, predictions)
+
+    # region Ridge Regression
+    print("Ridge Top Features")
+    ridge_regression = Ridge(alpha=.5)
+    # ridge_regression.fit(X_train, Y_train)
+    ridge_regression.fit(X_train[top_features], Y_train)
+    # test_score = ridge_regression.score(X_test, Y_test)
+    # test_score = ridge_regression.score(X_test[top_features], Y_test)
+    # print("Ridge regression score", test_score*100)
+    # predictions = ridge_regression.predict(X_test)
+    predictions = ridge_regression.predict(X_test[top_features])
+    print("Accuracy:", metrics.r2_score(Y_test, predictions) * 100)
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+    print("__________________________")
+
+    print("Ridge All Features")
+    ridge_regression.fit(X_train, Y_train)
+    predictions = ridge_regression.predict(X_test)
+    print("Accuracy:", metrics.r2_score(Y_test, predictions) * 100)
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+    # endregion
     # region Lasso Regression
 
     '''print("Lasso")
@@ -390,26 +640,7 @@ def main():
     # endregion
     print("---------------------------------")'''
 
-    # region Ridge Regression
-    print("Ridge Top Features")
-    ridge_regression = Ridge(alpha=.5)
-    # ridge_regression.fit(X_train, Y_train)
-    ridge_regression.fit(X_train[top_features], Y_train)
-    # test_score = ridge_regression.score(X_test, Y_test)
-    # test_score = ridge_regression.score(X_test[top_features], Y_test)
-    # print("Ridge regression score", test_score*100)
-    # predictions = ridge_regression.predict(X_test)
-    predictions = ridge_regression.predict(X_test[top_features])
-    print("Accuracy:", metrics.r2_score(Y_test, predictions) * 100)
-    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
-    print("__________________________")
 
-    print("Ridge All Features")
-    ridge_regression.fit(X_train, Y_train)
-    predictions = ridge_regression.predict(X_test)
-    print("Accuracy:", metrics.r2_score(Y_test, predictions) * 100)
-    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
-    # endregion
 
     '''print("---------------------------------")
     # region Elastic Regression
