@@ -2,11 +2,12 @@ import json
 from collections import defaultdict
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from sklearn import linear_model, metrics
 from sklearn.linear_model import Lasso, Ridge, ElasticNet
 from sklearn.svm import SVR
-# from sklearn.metrics import
-from mlxtend.feature_selection import SequentialFeatureSelector as sfs
+#from sklearn.metrics import
+#from mlxtend.feature_selection import SequentialFeatureSelector as sfs
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.feature_selection import RFE, RFECV, f_regression, SelectKBest, chi2
@@ -32,7 +33,7 @@ Y = wholeFile["vote_average"]
 def normalizeData(columnName):
     min_element = wholeFile[columnName].min()
     max_element = wholeFile[columnName].max()
-    wholeFile[columnName] = 0.9 * (wholeFile[columnName] - min_element) / (max_element - min_element)
+    wholeFile[columnName] = 2 * (wholeFile[columnName] - min_element) / (max_element - min_element)
 
 
 def convertDictColumnToScore(columnName, uniqueKey):
@@ -70,7 +71,11 @@ def convertDictColumnToScore(columnName, uniqueKey):
             for key, value in list_element.items():
                 if key == uniqueKey:
                     sumForOneCell += score_dict[value]
-        sumForAllCells.append(sumForOneCell)
+
+        if len(element) == 0:
+            sumForAllCells.append(sumForOneCell)
+        else:
+            sumForAllCells.append(sumForOneCell/len(element))
         sumForOneCell = 0
     wholeFile[columnName] = sumForAllCells
 
@@ -161,9 +166,6 @@ def dataPreprocessing():
     normalizeData("original_language")
     # endregion
 
-    # print(wholeFile["release_date"].describe())
-    # print("----------------------")
-
     # region release_date
     convertStringColToScore("release_date")
     normalizeData("release_date")
@@ -177,14 +179,11 @@ def main():
     # print("len of whole file before drop", len(wholeFile))
     wholeFile.drop(labels=['original_title', 'status', 'homepage', 'overview', 'tagline', 'title', 'id', 'movie_id'],
                    axis=1, inplace=True)
-    wholeFile.replace(['', ' ', [[]], [], None, {}], np.nan, inplace=True)  # 3shan .drop b t-drop no.nan bs
+    wholeFile.replace(['', ' ', [[]], [], None, {}], np.nan, inplace=True)
     # wholeFile.dropna(inplace=True, how='any')
 
     median = wholeFile['runtime'].median()
-    # print("NULL before", wholeFile.isnull().sum())
     wholeFile['runtime'].fillna(median, inplace=True)
-    # print("NULL after", wholeFile.isnull().sum())
-    # print("len of whole file after drop", len(wholeFile))
 
     # pre-processing:
     dataPreprocessing()
@@ -206,8 +205,11 @@ def main():
     # region Select top features
     top_features = wholeFile.corr().index[abs(wholeFile.corr()['vote_average'] >= 0.3)]
     top_features = top_features.drop("vote_average")
-    # print("top_features using corr()")
-    # print(top_features)
+    print("top_features using corr()")
+    print(top_features)
+    top_corr=wholeFile[top_features].corr()
+    sns.heatmap(top_corr, annot=True)
+    #plt.show()
     # print(wholeFile["budget"].corr(wholeFile['vote_average']))
     #
     # # best features
@@ -219,13 +221,20 @@ def main():
 
     # region Multiple linear regression with all features
     # Technique 1
-    print("Multiple linear:")
+    print("Multiple linear:All Features")
     regression = linear_model.LinearRegression()
     regression.fit(X_train, Y_train)
     # regression.fit(X_train[top_features], Y_train)
     predictions = regression.predict(X_test)
     # predictions = regression.predict(X_test[top_features])
     # print("*mean_absolute_error:", metrics.mean_absolute_error(Y_test, predictions))
+    print("Accuracy:", 100 * metrics.r2_score(Y_test, predictions))
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+    # Top Features
+    print("Multiple linear:Top Features")
+    regression2 = linear_model.LinearRegression()
+    regression2.fit(X_train[top_features], Y_train)
+    predictions = regression2.predict(X_test[top_features])
     print("Accuracy:", 100 * metrics.r2_score(Y_test, predictions))
     print("MSE:", metrics.mean_squared_error(Y_test, predictions))
     # print("*root mean_squared_error:", np.sqrt(metrics.mean_squared_error(Y_test, predictions)))
@@ -236,13 +245,22 @@ def main():
 
     # region Polynomial regression
     # Technique 2
-    print("Polynomial")
-    poly = PolynomialFeatures(3)
+    print("Polynomial All Features")
+    poly = PolynomialFeatures(degree=3)
     poly_fit = poly.fit_transform(X_train)
     poly.fit(poly_fit, Y_train)
-    # print("Accuracy:", 100 * metrics.r2_score(Y_test, predictions))
-    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
 
+    print("Accuracy:", 100 * metrics.r2_score(Y_test, predictions))
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+    print("___________")
+
+    print("Polynomial Top Features")
+    poly = PolynomialFeatures(degree=3)
+    poly_fit = poly.fit_transform(X_train[top_features])
+    poly.fit(poly_fit, Y_train)
+
+    print("Accuracy:", 100 * metrics.r2_score(Y_test, predictions))
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
     # endregion
     print("---------------------------------")
 
@@ -271,7 +289,6 @@ def main():
 
     # endregion
     print("---------------------------------")
-
 
     # region Lasso Regression
 
