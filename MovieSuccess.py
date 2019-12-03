@@ -581,9 +581,24 @@ def main():
     print("MSE:", metrics.mean_squared_error(Y_test, predictions_poly))
     print("__________________________")
 
-    print("SVR All Features")
+    print("SVR rbf: All Features")
     svr_rbf = SVR(kernel='rbf', C=1, gamma=1, epsilon=.1).fit(X_train, Y_train)
     predictions = svr_rbf.predict(X_test)
+    print("Accuracy:", metrics.r2_score(Y_test, predictions) * 100)  # np.mean(predictions == Y_validation)*100)
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+
+    print("__________________________")
+
+    print("SVR poly: All Features")
+    svr_poly = SVR(kernel='poly', C=1, gamma=1, epsilon=.1).fit(X_train, Y_train)
+    predictions = svr_poly.predict(X_test)
+    print("Accuracy:", metrics.r2_score(Y_test, predictions) * 100)  # np.mean(predictions == Y_validation)*100)
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+    print("__________________________")
+
+    print("SVR lin: All Features")
+    svr_lin = SVR(kernel='linear', C=1, gamma=1, epsilon=.1).fit(X_train, Y_train)
+    predictions = svr_lin.predict(X_test)
     print("Accuracy:", metrics.r2_score(Y_test, predictions) * 100)  # np.mean(predictions == Y_validation)*100)
     print("MSE:", metrics.mean_squared_error(Y_test, predictions))
 
