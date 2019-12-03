@@ -3,11 +3,12 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import matplotlib
 from sklearn import linear_model, metrics
 from sklearn.linear_model import Lasso, Ridge, ElasticNet
 from sklearn.svm import SVR
-#from sklearn.metrics import
-#from mlxtend.feature_selection import SequentialFeatureSelector as sfs
+# from sklearn.metrics import
+# from mlxtend.feature_selection import SequentialFeatureSelector as sfs
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.feature_selection import RFE, RFECV, f_regression, SelectKBest, chi2
@@ -15,8 +16,8 @@ import matplotlib.pyplot as plt
 
 # region Public
 
-moviesFile = pd.read_csv('Train Set/tmdb_5000_movies_train.csv', keep_default_na=True)#, na_values=[""])
-creditsFile = pd.read_csv('Train Set/tmdb_5000_credits_train.csv', keep_default_na=True)#, na_values=[""])
+moviesFile = pd.read_csv('Train Set/tmdb_5000_movies_train.csv', keep_default_na=True)  # , na_values=[""])
+creditsFile = pd.read_csv('Train Set/tmdb_5000_credits_train.csv', keep_default_na=True)  # , na_values=[""])
 
 # print("From public:")
 # w = pd.get_dummies(moviesFile, columns=['title', 'tagline', 'homepage'], drop_first=True)
@@ -24,16 +25,17 @@ creditsFile = pd.read_csv('Train Set/tmdb_5000_credits_train.csv', keep_default_
 
 # inner y keep rl 7agat el comman fl 2 df bs
 wholeFile = pd.merge(moviesFile, creditsFile, sort=True, how='inner', left_on=['id', 'title'],
-                    right_on=['movie_id', 'title'])
+                     right_on=['movie_id', 'title'])
 # wholeFile = pd.read_csv('out.csv')
 Y = wholeFile["vote_average"]
+
 
 # endregion
 
 def normalizeData(columnName):
     min_element = wholeFile[columnName].min()
     max_element = wholeFile[columnName].max()
-    wholeFile[columnName] = 2 * (wholeFile[columnName] - min_element) / (max_element - min_element)
+    wholeFile[columnName] = 3 * (wholeFile[columnName] - min_element) / (max_element - min_element)
 
 
 def convertDictColumnToScore(columnName, uniqueKey):
@@ -75,7 +77,7 @@ def convertDictColumnToScore(columnName, uniqueKey):
         if len(element) == 0:
             sumForAllCells.append(sumForOneCell)
         else:
-            sumForAllCells.append(sumForOneCell/len(element))
+            sumForAllCells.append(sumForOneCell / len(element))
         sumForOneCell = 0
     wholeFile[columnName] = sumForAllCells
 
@@ -110,7 +112,7 @@ def dataPreprocessing():
     normalizeData("budget")
     normalizeData("popularity")
     normalizeData("vote_count")
-    normalizeData("vote_average")
+    # normalizeData("vote_average")
     normalizeData("revenue")
     normalizeData("runtime")
 
@@ -174,8 +176,68 @@ def dataPreprocessing():
     # print(wholeFile['original_language'].corr(wholeFile['vote_average']))
 
 
-def main():
+# def Svr_regression_model():
+#     # region SVR regression
+#
+#     print("SVR Kernal: rbf Top Features")
+#     svr_rbf = SVR(kernel='rbf', C=1, gamma=1, epsilon=.1).fit(X_train[top_features], Y_train)
+#     svr_lin = SVR(kernel='linear', C=1).fit(X_train[top_features], Y_train)
+#     svr_poly = SVR(kernel='poly', C=1, gamma=1, degree=2, epsilon=.1, coef0=1).fit(X_train[top_features], Y_train)
+#     # print("linear coeff", svr_lin.coef_)
+#     # print("bias", svr_lin.intercept_)
+#
+#     predictions_rbf = svr_rbf.predict(X_test[top_features])
+#     print("Accuracy:", metrics.r2_score(Y_test, predictions_rbf) * 100)  # np.mean(predictions == Y_validation)*100)
+#     print("MSE:", metrics.mean_squared_error(Y_test, predictions_rbf))
+#     print("__________________________")
+#     print("SVR Kernal: lin Top Features")
+#     predictions_lin = svr_lin.predict(X_test[top_features])
+#     print("Accuracy:", metrics.r2_score(Y_test, predictions_lin) * 100)  # np.mean(predictions == Y_validation)*100)
+#     print("MSE:", metrics.mean_squared_error(Y_test, predictions_lin))
+#     print("__________________________")
+#     print("SVR Kernal: poly Top Features")
+#     predictions_poly = svr_poly.predict(X_test[top_features])
+#     print("Accuracy:", metrics.r2_score(Y_test, predictions_poly) * 100)  # np.mean(predictions == Y_validation)*100)
+#     print("MSE:", metrics.mean_squared_error(Y_test, predictions_poly))
+#     print("__________________________")
+#     print("SVR All Features")
+#     svr_rbf = SVR(kernel='rbf', C=1, gamma=1, epsilon=.1).fit(X_train, Y_train)
+#     predictions = svr_rbf.predict(X_test)
+#     print("Accuracy:", metrics.r2_score(Y_test, predictions) * 100)  # np.mean(predictions == Y_validation)*100)
+#     print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+#
+#     # predictions = svr_lin.predict(X_test[top_features])
+#     # print("**svr_lin accuracy:", metrics.r2_score(Y_test, predictions)*100)#np.mean(predictions == Y_validation)*100)
+#     # print("svr_lin MSE:", metrics.mean_squared_error(Y_test, predictions), "\n")
+#     #
+#     # predictions = svr_poly.predict(X_test[top_features])
+#     # print("**svr_poly accuracy:", metrics.r2_score(Y_test, predictions)*100)#np.mean(predictions == Y_validation)*100)
+#     # print("svr_poly MSE:", metrics.mean_squared_error(Y_test, predictions))
+#
+#     # endregion
+#     print("---------------------------------")
+#     drawFeatures(X_test, Y_test, predictions)
+def drawFeatures(X_test, Y_test, prediction):
+    x1 = X_test["runtime"]
+    x2 = Y_test
+    label = Y_test
+    colors = ['blue', 'purple']
 
+    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+    plt.xlabel('X1', fontsize=20)
+    plt.ylabel('X2', fontsize=20)
+
+    cb = plt.colorbar()
+    loc = np.arange(0, max(label), max(label) / float(len(colors)))
+    cb.set_ticks(loc)
+    cb.set_ticklabels(['runtime', 'vote_average'])
+
+    # line
+    plt.plot(x1, prediction, color='green', linewidth=1.5)
+    plt.show()
+
+
+def main():
     # print("len of whole file before drop", len(wholeFile))
     wholeFile.drop(labels=['original_title', 'status', 'homepage', 'overview', 'tagline', 'title', 'id', 'movie_id'],
                    axis=1, inplace=True)
@@ -203,24 +265,32 @@ def main():
     # X_train, X_validation, Y_train, Y_validation = train_test_split(X_train, Y_train, test_size=0.2, shuffle=True)
 
     # region Select top features
-    top_features = wholeFile.corr().index[abs(wholeFile.corr()['vote_average'] >= 0.3)]
-    top_features = top_features.drop("vote_average")
-    print("top_features using corr()")
-    print(top_features)
-    top_corr=wholeFile[top_features].corr()
-    sns.heatmap(top_corr, annot=True)
-    #plt.show()
-    # print(wholeFile["budget"].corr(wholeFile['vote_average']))
-    #
-    # # best features
-    # top_features = SelectKBest(chi2, k=4).fit(X_train, Y_train)
-    # print("Top features using chi2")
+    # top_features = wholeFile.corr().index[abs(wholeFile.corr()['vote_average'] >= 0.3)]
+    # top_features = top_features.drop("vote_average")
+    # print("top_features using corr()")
     # print(top_features)
 
-    #endregion
-
+    # region SelectKBest
+    k = 6
+    selector = SelectKBest(f_regression, k=k)
+    selector_fit_transform = selector.fit_transform(X_train, Y_train)
+    top_features = X_train.columns[selector.get_support()]
+    print("top_features  from SelectKBest k =", k)
+    print(top_features)
+    # top_corr = wholeFile[top_features].corr()
+    # sns.heatmap(top_corr, annot=True)
+    # plt.show()
+    # endregion
     # region Multiple linear regression with all features
     # Technique 1
+    # Top Features
+    print("Multiple linear:Top Features")
+    regression2 = linear_model.LinearRegression()
+    regression2.fit(X_train[top_features], Y_train)
+    predictions = regression2.predict(X_test[top_features])
+    print("Accuracy:", 100 * metrics.r2_score(Y_test, predictions))
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+    print("__________________________")
     print("Multiple linear:All Features")
     regression = linear_model.LinearRegression()
     regression.fit(X_train, Y_train)
@@ -230,13 +300,7 @@ def main():
     # print("*mean_absolute_error:", metrics.mean_absolute_error(Y_test, predictions))
     print("Accuracy:", 100 * metrics.r2_score(Y_test, predictions))
     print("MSE:", metrics.mean_squared_error(Y_test, predictions))
-    # Top Features
-    print("Multiple linear:Top Features")
-    regression2 = linear_model.LinearRegression()
-    regression2.fit(X_train[top_features], Y_train)
-    predictions = regression2.predict(X_test[top_features])
-    print("Accuracy:", 100 * metrics.r2_score(Y_test, predictions))
-    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+
     # print("*root mean_squared_error:", np.sqrt(metrics.mean_squared_error(Y_test, predictions)))
     # print("*regression.score", regression.score(X_test, Y_test))
 
@@ -245,15 +309,6 @@ def main():
 
     # region Polynomial regression
     # Technique 2
-    print("Polynomial All Features")
-    poly = PolynomialFeatures(degree=3)
-    poly_fit = poly.fit_transform(X_train)
-    poly.fit(poly_fit, Y_train)
-
-    print("Accuracy:", 100 * metrics.r2_score(Y_test, predictions))
-    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
-    print("___________")
-
     print("Polynomial Top Features")
     poly = PolynomialFeatures(degree=3)
     poly_fit = poly.fit_transform(X_train[top_features])
@@ -261,22 +316,45 @@ def main():
 
     print("Accuracy:", 100 * metrics.r2_score(Y_test, predictions))
     print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+    print("__________________________")
+    print("Polynomial All Features")
+    poly = PolynomialFeatures(degree=3)
+    poly_fit = poly.fit_transform(X_train)
+    poly.fit(poly_fit, Y_train)
+
+    print("Accuracy:", 100 * metrics.r2_score(Y_test, predictions))
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+
     # endregion
     print("---------------------------------")
 
     # region SVR regression
 
-    print("SVR")
+    print("SVR Kernal: rbf Top Features")
     svr_rbf = SVR(kernel='rbf', C=1, gamma=1, epsilon=.1).fit(X_train[top_features], Y_train)
-    # svr_lin = SVR(kernel='linear', C=1).fit(X_train[top_features], Y_train)
-    # print("after second")
-    # svr_poly = SVR(kernel='poly', C=1, gamma=1, degree=2, epsilon=.1, coef0=1).fit(X_train[top_features], Y_train)
-    # print("after third")
+    svr_lin = SVR(kernel='linear', C=1).fit(X_train[top_features], Y_train)
+    svr_poly = SVR(kernel='poly', C=1, gamma=1, degree=2, epsilon=.1, coef0=1).fit(X_train[top_features], Y_train)
     # print("linear coeff", svr_lin.coef_)
     # print("bias", svr_lin.intercept_)
 
-    predictions = svr_rbf.predict(X_test[top_features])
-    print("Accuracy:", metrics.r2_score(Y_test, predictions)*100)#np.mean(predictions == Y_validation)*100)
+    predictions_rbf = svr_rbf.predict(X_test[top_features])
+    print("Accuracy:", metrics.r2_score(Y_test, predictions_rbf) * 100)  # np.mean(predictions == Y_validation)*100)
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions_rbf))
+    print("__________________________")
+    print("SVR Kernal: lin Top Features")
+    predictions_lin = svr_lin.predict(X_test[top_features])
+    print("Accuracy:", metrics.r2_score(Y_test, predictions_lin) * 100)  # np.mean(predictions == Y_validation)*100)
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions_lin))
+    print("__________________________")
+    print("SVR Kernal: poly Top Features")
+    predictions_poly = svr_poly.predict(X_test[top_features])
+    print("Accuracy:", metrics.r2_score(Y_test, predictions_poly) * 100)  # np.mean(predictions == Y_validation)*100)
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions_poly))
+    print("__________________________")
+    print("SVR All Features")
+    svr_rbf = SVR(kernel='rbf', C=1, gamma=1, epsilon=.1).fit(X_train, Y_train)
+    predictions = svr_rbf.predict(X_test)
+    print("Accuracy:", metrics.r2_score(Y_test, predictions) * 100)  # np.mean(predictions == Y_validation)*100)
     print("MSE:", metrics.mean_squared_error(Y_test, predictions))
 
     # predictions = svr_lin.predict(X_test[top_features])
@@ -289,10 +367,10 @@ def main():
 
     # endregion
     print("---------------------------------")
-
+    drawFeatures(X_test, Y_test, predictions)
     # region Lasso Regression
 
-    print("Lasso")
+    '''print("Lasso")
 
     lasso = Lasso()
     lasso.fit(X_train, Y_train)
@@ -308,11 +386,12 @@ def main():
     print("Accuracy:", test_score*100)
     print("MSE:", metrics.mean_squared_error(Y_test, predictions))
 
-    # endregion
-    print("---------------------------------")
 
-    #region Ridge Regression
-    print("Ridge")
+    # endregion
+    print("---------------------------------")'''
+
+    # region Ridge Regression
+    print("Ridge Top Features")
     ridge_regression = Ridge(alpha=.5)
     # ridge_regression.fit(X_train, Y_train)
     ridge_regression.fit(X_train[top_features], Y_train)
@@ -321,12 +400,18 @@ def main():
     # print("Ridge regression score", test_score*100)
     # predictions = ridge_regression.predict(X_test)
     predictions = ridge_regression.predict(X_test[top_features])
-    print("Accuracy:", metrics.r2_score(Y_test, predictions)*100)
+    print("Accuracy:", metrics.r2_score(Y_test, predictions) * 100)
     print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+    print("__________________________")
 
+    print("Ridge All Features")
+    ridge_regression.fit(X_train, Y_train)
+    predictions = ridge_regression.predict(X_test)
+    print("Accuracy:", metrics.r2_score(Y_test, predictions) * 100)
+    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
     # endregion
 
-    print("---------------------------------")
+    '''print("---------------------------------")
     # region Elastic Regression
     print("Elastic")
     elastic_regression = ElasticNet(random_state=0)
@@ -337,7 +422,7 @@ def main():
     accuracy = metrics.r2_score(Y_test, predictions)*100
     print("Accuracy:", accuracy)
     test_error = metrics.mean_squared_error(Y_test, predictions)
-    print("MSE:", test_error)
+    print("MSE:", test_error)'''
 
     # endregion
 
