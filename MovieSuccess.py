@@ -101,9 +101,7 @@ def convertStringColToScore(colName):
 
 
 def dataPreprocessing():
-    # region drop cols
 
-    # endregion
     wholeFile["release_date"] = wholeFile["release_date"].astype('datetime64[ns]')
     # replace el date b-el year bs: first try.
     wholeFile["release_date"] = [i.year for i in wholeFile["release_date"]]
@@ -176,287 +174,408 @@ def dataPreprocessing():
     # print(wholeFile['original_language'].corr(wholeFile['vote_average']))
 
 
-def drawFeatures(X_test,Y_test,prediction):
-    #region budget
-    x1 = X_test["budget"]
+
+# def drawFeatures(colName, weights, b, X_test, Y_test):
+# #
+#     x1 = X_test[colName]
+#     x2 = Y_test
+#     label = Y_test
+#     colors = ['blue', 'purple']
+#
+#     plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+#     plt.xlabel('X1', fontsize=20)
+#     plt.ylabel('X2', fontsize=20)
+#
+#     cb = plt.colorbar()
+#     loc = np.arange(0, max(label), max(label) / float(len(colors)))
+#     cb.set_ticks(loc)
+#     cb.set_ticklabels([colName, 'vote_average'])
+#
+#     x2 = min(X_test[colName]) - 5
+#     col_indx = X_test.columns.get_loc(colName)
+#     w2 = weights[col_indx]
+#     w1=1
+#     x1 = ((-w2 * x2) - b) / w1
+#
+#     pointX, pointY = [], []
+#     pointX.append(x2)
+#     pointY.append(x1)
+#
+#     x1 = max(X_test[colName]) + 5
+#     x2 = ((-w1 * x1) - b) / w2
+#
+#     pointX.append(x1)
+#     pointY.append(x2)
+#
+#     plt.plot(pointX, pointY, color='green', linewidth=2)
+#
+#     plt.show()
+#     #endregion
+
+
+
+def drawFeatures(model, colName, X_test,X_train, Y_test, Y_train):
+#
+    x1 = X_test[colName]
     x2 = Y_test
     label = Y_test
     colors = ['blue', 'purple']
 
-    plt.scatter(x1, x2, c=label,cmap=matplotlib.colors.ListedColormap(colors))
+    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
     plt.xlabel('X1', fontsize=20)
     plt.ylabel('X2', fontsize=20)
 
     cb = plt.colorbar()
     loc = np.arange(0, max(label), max(label) / float(len(colors)))
     cb.set_ticks(loc)
-    cb.set_ticklabels(['budget', 'vote_average'])
+    cb.set_ticklabels([colName, 'vote_average'])
 
     #line
-    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+    col_indx = X_test.columns.get_loc(colName)
+    x = X_train
+    x = np.array(X_train)
+    x = x[:, col_indx]
+    x=x.reshape(-1, 1)
+    Y_train=np.array(Y_train).reshape(-1,1)  # v=np.array(X_train[colName])
+    model.fit(x, Y_train)
+    x_test=np.array(X_test[colName]).reshape(-1,1)
+    predictions = model.predict(x_test)
+    plt.plot(x_test, predictions, color='black', linewidth=1.5)
     plt.show()
+
     #endregion
 
-    # region genres
-    x1 = X_test["genres"]
-    x2 = Y_test
-    label = Y_test
-    colors = ['blue', 'purple']
 
-    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
-    plt.xlabel('X1', fontsize=20)
-    plt.ylabel('X2', fontsize=20)
 
-    cb = plt.colorbar()
-    loc = np.arange(0, max(label), max(label) / float(len(colors)))
-    cb.set_ticks(loc)
-    cb.set_ticklabels(['genres', 'vote_average'])
+# def drawFeatures(colName, weights, b, X_test, Y_test):
+# #
+#     x1 = X_test[colName]
+#     x2 = Y_test
+#     label = Y_test
+#     colors = ['blue', 'purple']
+#
+#     plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+#     plt.xlabel('X1', fontsize=20)
+#     plt.ylabel('X2', fontsize=20)
+#
+#     cb = plt.colorbar()
+#     loc = np.arange(0, max(label), max(label) / float(len(colors)))
+#     cb.set_ticks(loc)
+#     cb.set_ticklabels([colName, 'vote_average'])
+#
+#     x2 = min(X_test[colName]) - 5
+#     col_indx = X_test.columns.get_loc(colName)
+#     w2 = weights[col_indx]
+#     w1=1
+#     x1 = ((-w2 * x2) - b) / w1
+#
+#     pointX, pointY = [], []
+#     pointX.append(x2)
+#     pointY.append(x1)
+#
+#     x1 = max(X_test[colName]) + 5
+#     x2 = ((-w1 * x1) - b) / w2
+#
+#     pointX.append(x1)
+#     pointY.append(x2)
+#
+#     plt.plot(pointX, pointY, color='green', linewidth=2)
+#
+#     plt.show()
+#     #endregion
 
-    # line
-    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
-    plt.show()
-    # endregion
-
-    # region keywords
-    x1 = X_test["keywords"]
-    x2 = Y_test
-    label = Y_test
-    colors = ['blue', 'purple']
-
-    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
-    plt.xlabel('X1', fontsize=20)
-    plt.ylabel('X2', fontsize=20)
-
-    cb = plt.colorbar()
-    loc = np.arange(0, max(label), max(label) / float(len(colors)))
-    cb.set_ticks(loc)
-    cb.set_ticklabels(['keywords', 'vote_average'])
-
-    # line
-    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
-    plt.show()
-    # endregion
-
-    # region original_language
-    x1 = X_test["original_language"]
-    x2 = Y_test
-    label = Y_test
-    colors = ['blue', 'purple']
-
-    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
-    plt.xlabel('X1', fontsize=20)
-    plt.ylabel('X2', fontsize=20)
-
-    cb = plt.colorbar()
-    loc = np.arange(0, max(label), max(label) / float(len(colors)))
-    cb.set_ticks(loc)
-    cb.set_ticklabels(['original_language', 'vote_average'])
-
-    # line
-    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
-    plt.show()
-    # endregion
-
-    # region popularity
-    x1 = X_test["popularity"]
-    x2 = Y_test
-    label = Y_test
-    colors = ['blue', 'purple']
-
-    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
-    plt.xlabel('X1', fontsize=20)
-    plt.ylabel('X2', fontsize=20)
-
-    cb = plt.colorbar()
-    loc = np.arange(0, max(label), max(label) / float(len(colors)))
-    cb.set_ticks(loc)
-    cb.set_ticklabels(['popularity', 'vote_average'])
-
-    # line
-    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
-    plt.show()
-    # endregion
-
-    # region production_companies
-    x1 = X_test["production_companies"]
-    x2 = Y_test
-    label = Y_test
-    colors = ['blue', 'purple']
-
-    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
-    plt.xlabel('X1', fontsize=20)
-    plt.ylabel('X2', fontsize=20)
-
-    cb = plt.colorbar()
-    loc = np.arange(0, max(label), max(label) / float(len(colors)))
-    cb.set_ticks(loc)
-    cb.set_ticklabels(['production_companies', 'vote_average'])
-
-    # line
-    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
-    plt.show()
-    # endregion
-
-    # region production_countries
-    x1 = X_test["production_countries"]
-    x2 = Y_test
-    label = Y_test
-    colors = ['blue', 'purple']
-
-    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
-    plt.xlabel('X1', fontsize=20)
-    plt.ylabel('X2', fontsize=20)
-
-    cb = plt.colorbar()
-    loc = np.arange(0, max(label), max(label) / float(len(colors)))
-    cb.set_ticks(loc)
-    cb.set_ticklabels(['production_countries', 'vote_average'])
-
-    # line
-    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
-    plt.show()
-    # endregion
-
-    # region release_date
-    x1 = X_test["release_date"]
-    x2 = Y_test
-    label = Y_test
-    colors = ['blue', 'purple']
-
-    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
-    plt.xlabel('X1', fontsize=20)
-    plt.ylabel('X2', fontsize=20)
-
-    cb = plt.colorbar()
-    loc = np.arange(0, max(label), max(label) / float(len(colors)))
-    cb.set_ticks(loc)
-    cb.set_ticklabels(['release_date', 'vote_average'])
-
-    # line
-    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
-    plt.show()
-    # endregion
-
-    # region revenue
-    x1 = X_test["revenue"]
-    x2 = Y_test
-    label = Y_test
-    colors = ['blue', 'purple']
-
-    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
-    plt.xlabel('X1', fontsize=20)
-    plt.ylabel('X2', fontsize=20)
-
-    cb = plt.colorbar()
-    loc = np.arange(0, max(label), max(label) / float(len(colors)))
-    cb.set_ticks(loc)
-    cb.set_ticklabels(['revenue', 'vote_average'])
-
-    # line
-    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
-    plt.show()
-    # endregion
-
-    # region runtime
-    x1 = X_test["runtime"]
-    x2 = Y_test
-    label = Y_test
-    colors = ['blue', 'purple']
-
-    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
-    plt.xlabel('X1', fontsize=20)
-    plt.ylabel('X2', fontsize=20)
-
-    cb = plt.colorbar()
-    loc = np.arange(0, max(label), max(label) / float(len(colors)))
-    cb.set_ticks(loc)
-    cb.set_ticklabels(['runtime', 'vote_average'])
-
-    # line
-    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
-    plt.show()
-    # endregion
-
-    # region spoken_languages
-    x1 = X_test["spoken_languages"]
-    x2 = Y_test
-    label = Y_test
-    colors = ['blue', 'purple']
-
-    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
-    plt.xlabel('X1', fontsize=20)
-    plt.ylabel('X2', fontsize=20)
-
-    cb = plt.colorbar()
-    loc = np.arange(0, max(label), max(label) / float(len(colors)))
-    cb.set_ticks(loc)
-    cb.set_ticklabels(['spoken_languages', 'vote_average'])
-
-    # line
-    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
-    plt.show()
-    # endregion
-
-    # region vote_count
-    x1 = X_test["vote_count"]
-    x2 = Y_test
-    label = Y_test
-    colors = ['blue', 'purple']
-
-    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
-    plt.xlabel('X1', fontsize=20)
-    plt.ylabel('X2', fontsize=20)
-
-    cb = plt.colorbar()
-    loc = np.arange(0, max(label), max(label) / float(len(colors)))
-    cb.set_ticks(loc)
-    cb.set_ticklabels(['vote_count', 'vote_average'])
-
-    # line
-    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
-    plt.show()
-    # endregion
-
-    # region cast
-    x1 = X_test["cast"]
-    x2 = Y_test
-    label = Y_test
-    colors = ['blue', 'purple']
-
-    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
-    plt.xlabel('X1', fontsize=20)
-    plt.ylabel('X2', fontsize=20)
-
-    cb = plt.colorbar()
-    loc = np.arange(0, max(label), max(label) / float(len(colors)))
-    cb.set_ticks(loc)
-    cb.set_ticklabels(['cast', 'vote_average'])
-
-    # line
-    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
-    plt.show()
-    # endregion
-
-    # region crew
-    x1 = X_test["crew"]
-    x2 = Y_test
-    label = Y_test
-    colors = ['blue', 'purple']
-
-    plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
-    plt.xlabel('X1', fontsize=20)
-    plt.ylabel('X2', fontsize=20)
-
-    cb = plt.colorbar()
-    loc = np.arange(0, max(label), max(label) / float(len(colors)))
-    cb.set_ticks(loc)
-    cb.set_ticklabels(['crew', 'vote_average'])
-
-    # line
-    plt.plot(x1, prediction, color='cyan', linewidth=1.5)
-    plt.show()
-    # endregion
-
+# def drawFeatures(X_test,Y_test,prediction):
+#     #region budget
+#     x1 = X_test["budget"]
+#     x2 = Y_test
+#     label = Y_test
+#     colors = ['blue', 'purple']
+#
+#     plt.scatter(x1, x2, c=label,cmap=matplotlib.colors.ListedColormap(colors))
+#     plt.xlabel('X1', fontsize=20)
+#     plt.ylabel('X2', fontsize=20)
+#
+#     cb = plt.colorbar()
+#     loc = np.arange(0, max(label), max(label) / float(len(colors)))
+#     cb.set_ticks(loc)
+#     cb.set_ticklabels(['budget', 'vote_average'])
+#
+#     #line
+#     plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+#     plt.show()
+#     #endregion
+#
+#     # region genres
+#     x1 = X_test["genres"]
+#     x2 = Y_test
+#     label = Y_test
+#     colors = ['blue', 'purple']
+#
+#     plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+#     plt.xlabel('X1', fontsize=20)
+#     plt.ylabel('X2', fontsize=20)
+#
+#     cb = plt.colorbar()
+#     loc = np.arange(0, max(label), max(label) / float(len(colors)))
+#     cb.set_ticks(loc)
+#     cb.set_ticklabels(['genres', 'vote_average'])
+#
+#     # line
+#     plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+#     plt.show()
+#     # endregion
+#
+#     # region keywords
+#     x1 = X_test["keywords"]
+#     x2 = Y_test
+#     label = Y_test
+#     colors = ['blue', 'purple']
+#
+#     plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+#     plt.xlabel('X1', fontsize=20)
+#     plt.ylabel('X2', fontsize=20)
+#
+#     cb = plt.colorbar()
+#     loc = np.arange(0, max(label), max(label) / float(len(colors)))
+#     cb.set_ticks(loc)
+#     cb.set_ticklabels(['keywords', 'vote_average'])
+#
+#     # line
+#     plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+#     plt.show()
+#     # endregion
+#
+#     # region original_language
+#     x1 = X_test["original_language"]
+#     x2 = Y_test
+#     label = Y_test
+#     colors = ['blue', 'purple']
+#
+#     plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+#     plt.xlabel('X1', fontsize=20)
+#     plt.ylabel('X2', fontsize=20)
+#
+#     cb = plt.colorbar()
+#     loc = np.arange(0, max(label), max(label) / float(len(colors)))
+#     cb.set_ticks(loc)
+#     cb.set_ticklabels(['original_language', 'vote_average'])
+#
+#     # line
+#     plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+#     plt.show()
+#     # endregion
+#
+#     # region popularity
+#     x1 = X_test["popularity"]
+#     x2 = Y_test
+#     label = Y_test
+#     colors = ['blue', 'purple']
+#
+#     plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+#     plt.xlabel('X1', fontsize=20)
+#     plt.ylabel('X2', fontsize=20)
+#
+#     cb = plt.colorbar()
+#     loc = np.arange(0, max(label), max(label) / float(len(colors)))
+#     cb.set_ticks(loc)
+#     cb.set_ticklabels(['popularity', 'vote_average'])
+#
+#     # line
+#     plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+#     plt.show()
+#     # endregion
+#
+#     # region production_companies
+#     x1 = X_test["production_companies"]
+#     x2 = Y_test
+#     label = Y_test
+#     colors = ['blue', 'purple']
+#
+#     plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+#     plt.xlabel('X1', fontsize=20)
+#     plt.ylabel('X2', fontsize=20)
+#
+#     cb = plt.colorbar()
+#     loc = np.arange(0, max(label), max(label) / float(len(colors)))
+#     cb.set_ticks(loc)
+#     cb.set_ticklabels(['production_companies', 'vote_average'])
+#
+#     # line
+#     plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+#     plt.show()
+#     # endregion
+#
+#     # region production_countries
+#     x1 = X_test["production_countries"]
+#     x2 = Y_test
+#     label = Y_test
+#     colors = ['blue', 'purple']
+#
+#     plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+#     plt.xlabel('X1', fontsize=20)
+#     plt.ylabel('X2', fontsize=20)
+#
+#     cb = plt.colorbar()
+#     loc = np.arange(0, max(label), max(label) / float(len(colors)))
+#     cb.set_ticks(loc)
+#     cb.set_ticklabels(['production_countries', 'vote_average'])
+#
+#     # line
+#     regression2 = linear_model.LinearRegression()
+#     regression2.fit(X_test, Y_test)
+#     arr = np.array(X_test["budget"]).reshape(X_test["budget"].shape[0],1)
+#     print("X_test[budget] shappe")
+#     print(X_test["budget"].shape)
+#     print(X_test["budget"])
+#     pre=regression2.predict(np.reshape(arr, (-1,1)))
+#     print("shape pre")
+#     print(pre.shape)
+#     plt.plot(x1, pre, color='cyan', linewidth=1.5)
+#     plt.show()
+#     # endregion
+#
+#     # region release_date
+#     x1 = X_test["release_date"]
+#     x2 = Y_test
+#     label = Y_test
+#     colors = ['blue', 'purple']
+#
+#     plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+#     plt.xlabel('X1', fontsize=20)
+#     plt.ylabel('X2', fontsize=20)
+#
+#     cb = plt.colorbar()
+#     loc = np.arange(0, max(label), max(label) / float(len(colors)))
+#     cb.set_ticks(loc)
+#     cb.set_ticklabels(['release_date', 'vote_average'])
+#
+#     # line
+#     plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+#     plt.show()
+#     # endregion
+#
+#     # region revenue
+#     x1 = X_test["revenue"]
+#     x2 = Y_test
+#     label = Y_test
+#     colors = ['blue', 'purple']
+#
+#     plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+#     plt.xlabel('X1', fontsize=20)
+#     plt.ylabel('X2', fontsize=20)
+#
+#     cb = plt.colorbar()
+#     loc = np.arange(0, max(label), max(label) / float(len(colors)))
+#     cb.set_ticks(loc)
+#     cb.set_ticklabels(['revenue', 'vote_average'])
+#
+#     # line
+#     plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+#     plt.show()
+#     # endregion
+#
+#     # region runtime
+#     x1 = X_test["runtime"]
+#     x2 = Y_test
+#     label = Y_test
+#     colors = ['blue', 'purple']
+#
+#     plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+#     plt.xlabel('X1', fontsize=20)
+#     plt.ylabel('X2', fontsize=20)
+#
+#     cb = plt.colorbar()
+#     loc = np.arange(0, max(label), max(label) / float(len(colors)))
+#     cb.set_ticks(loc)
+#     cb.set_ticklabels(['runtime', 'vote_average'])
+#
+#     # line
+#     plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+#     plt.show()
+#     # endregion
+#
+#     # region spoken_languages
+#     x1 = X_test["spoken_languages"]
+#     x2 = Y_test
+#     label = Y_test
+#     colors = ['blue', 'purple']
+#
+#     plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+#     plt.xlabel('X1', fontsize=20)
+#     plt.ylabel('X2', fontsize=20)
+#
+#     cb = plt.colorbar()
+#     loc = np.arange(0, max(label), max(label) / float(len(colors)))
+#     cb.set_ticks(loc)
+#     cb.set_ticklabels(['spoken_languages', 'vote_average'])
+#
+#     # line
+#     plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+#     plt.show()
+#     # endregion
+#
+#     # region vote_count
+#     x1 = X_test["vote_count"]
+#     x2 = Y_test
+#     label = Y_test
+#     colors = ['blue', 'purple']
+#
+#     plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+#     plt.xlabel('X1', fontsize=20)
+#     plt.ylabel('X2', fontsize=20)
+#
+#     cb = plt.colorbar()
+#     loc = np.arange(0, max(label), max(label) / float(len(colors)))
+#     cb.set_ticks(loc)
+#     cb.set_ticklabels(['vote_count', 'vote_average'])
+#
+#     # line
+#     plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+#     plt.show()
+#     # endregion
+#
+#     # region cast
+#     x1 = X_test["cast"]
+#     x2 = Y_test
+#     label = Y_test
+#     colors = ['blue', 'purple']
+#
+#     plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+#     plt.xlabel('X1', fontsize=20)
+#     plt.ylabel('X2', fontsize=20)
+#
+#     cb = plt.colorbar()
+#     loc = np.arange(0, max(label), max(label) / float(len(colors)))
+#     cb.set_ticks(loc)
+#     cb.set_ticklabels(['cast', 'vote_average'])
+#
+#     # line
+#     plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+#     plt.show()
+#     # endregion
+#
+#     # region crew
+#     x1 = X_test["crew"]
+#     x2 = Y_test
+#     label = Y_test
+#     colors = ['blue', 'purple']
+#
+#     plt.scatter(x1, x2, c=label, cmap=matplotlib.colors.ListedColormap(colors))
+#     plt.xlabel('X1', fontsize=20)
+#     plt.ylabel('X2', fontsize=20)
+#
+#     cb = plt.colorbar()
+#     loc = np.arange(0, max(label), max(label) / float(len(colors)))
+#     cb.set_ticks(loc)
+#     cb.set_ticklabels(['crew', 'vote_average'])
+#
+#     # line
+#     plt.plot(x1, prediction, color='cyan', linewidth=1.5)
+#     plt.show()
+#     # endregion
+#
+#
+#
 
 def main():
     # print("len of whole file before drop", len(wholeFile))
@@ -475,12 +594,12 @@ def main():
     X = wholeFile.drop(axis=1, labels="vote_average")
     Y = wholeFile["vote_average"]
 
-    # corr = wholeFile.corr()
+    corr = wholeFile.corr()
     # corr.style.background_gradient(cmap='coolwarm', axis=None)
 
     # Draw correlation matrix:
-    # plt.matshow(wholeFile.corr())
-    # plt.show()
+    plt.matshow(wholeFile.corr())
+    plt.show()
 
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3)
     # X_train, X_validation, Y_train, Y_validation = train_test_split(X_train, Y_train, test_size=0.2, shuffle=True)
@@ -492,15 +611,15 @@ def main():
     # print(top_features)
 
     # region SelectKBest
-    k = 6
+    k = 4
     selector = SelectKBest(f_regression, k=k)
     selector_fit_transform = selector.fit_transform(X_train, Y_train)
     top_features = X_train.columns[selector.get_support()]
     print("top_features  from SelectKBest k =", k)
     print(top_features)
-    # top_corr = wholeFile[top_features].corr()
-    # sns.heatmap(top_corr, annot=True)
-    # plt.show()
+    top_corr = wholeFile[top_features].corr()
+    sns.heatmap(top_corr, annot=True)
+    plt.show()
     # endregion
     # region Multiple linear regression with all features
     # Technique 1
@@ -553,7 +672,7 @@ def main():
     predictions = poly_model.predict(poly_features_test)
     print("Accuracy:", 100 * metrics.r2_score(Y_test, predictions))
     print("MSE:", metrics.mean_squared_error(Y_test, predictions))
-    drawFeatures(X_test, Y_test, predictions)
+
     # endregion
 
     # region SVR regression
@@ -568,7 +687,7 @@ def main():
     predictions_rbf = svr_rbf.predict(X_test[top_features])
     print("Accuracy:", metrics.r2_score(Y_test, predictions_rbf) * 100)  # np.mean(predictions == Y_validation)*100)
     print("MSE:", metrics.mean_squared_error(Y_test, predictions_rbf))
-    #drawFeatures(X_test, Y_test, predictions_rbf)
+
     print("__________________________")
     print("SVR Kernal: lin Top Features")
     predictions_lin = svr_lin.predict(X_test[top_features])
@@ -589,12 +708,12 @@ def main():
 
     print("__________________________")
 
-    print("SVR poly: All Features")
-    svr_poly = SVR(kernel='poly', C=1, gamma=1, epsilon=.1).fit(X_train, Y_train)
-    predictions = svr_poly.predict(X_test)
-    print("Accuracy:", metrics.r2_score(Y_test, predictions) * 100)  # np.mean(predictions == Y_validation)*100)
-    print("MSE:", metrics.mean_squared_error(Y_test, predictions))
-    print("__________________________")
+    # # print("SVR poly: All Features")
+    # svr_poly = SVR(kernel='poly', C=1, gamma=1, epsilon=.1).fit(X_train, Y_train)
+    # predictions = svr_poly.predict(X_test)
+    # print("Accuracy:", metrics.r2_score(Y_test, predictions) * 100)
+    # print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+    # print("__________________________")
 
     print("SVR lin: All Features")
     svr_lin = SVR(kernel='linear', C=1, gamma=1, epsilon=.1).fit(X_train, Y_train)
@@ -611,6 +730,7 @@ def main():
     # print("svr_poly MSE:", metrics.mean_squared_error(Y_test, predictions))
 
     # endregion
+
     print("---------------------------------")
 
     # region Ridge Regression
@@ -626,12 +746,22 @@ def main():
     print("Accuracy:", metrics.r2_score(Y_test, predictions) * 100)
     print("MSE:", metrics.mean_squared_error(Y_test, predictions))
     print("__________________________")
-
     print("Ridge All Features")
     ridge_regression.fit(X_train, Y_train)
+
     predictions = ridge_regression.predict(X_test)
     print("Accuracy:", metrics.r2_score(Y_test, predictions) * 100)
     print("MSE:", metrics.mean_squared_error(Y_test, predictions))
+    # print("ridge coeff", ridge_regression.coef_)
+    # drawFeatures("runtime", ridge_regression.coef_, ridge_regression.intercept_, X_test, Y_test)
+    for name in top_features:
+        drawFeatures(ridge_regression, name, X_test,X_train, Y_test, Y_train)
+    # drawFeatures("production_companies", X_test, Y_test, ridge_regression.coef_, ridge_regression.intercept_)
+
+    # drawFeatures("cast", X_test, Y_test, ridge_regression.coef_, ridge_regression.intercept_)
+    # drawFeatures("crew", X_test, Y_test, ridge_regression.coef_, ridge_regression.intercept_)
+
+
     # endregion
     # region Lasso Regression
 
