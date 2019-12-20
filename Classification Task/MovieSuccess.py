@@ -5,9 +5,10 @@ import pandas as pd
 from sklearn import tree
 import re
 import nltk
+
 nltk.download('stopwords')
-from nltk.stem.porter import PorterStemmer   #3shan ttla3 el esm lwa7do, zay fish mn fisher aw fishing
-from nltk.corpus import stopwords            #3shan nsheel el stopwords
+from nltk.stem.porter import PorterStemmer  # 3shan ttla3 el esm lwa7do, zay fish mn fisher aw fishing
+from nltk.corpus import stopwords  # 3shan nsheel el stopwords
 from sklearn.feature_extraction.text import CountVectorizer
 # import seaborn as sns
 # import matplotlib
@@ -16,7 +17,6 @@ from sklearn.feature_extraction.text import CountVectorizer
 # from sklearn.svm import SVR
 # from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import PolynomialFeatures, LabelEncoder, scale
@@ -27,7 +27,11 @@ from sklearn.multiclass import OneVsRestClassifier
 import matplotlib.pyplot as plt
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import  GradientBoostingClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.decomposition import PCA
+import timeit
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neural_network import MLPClassifier
 
 # region Public
 
@@ -43,13 +47,9 @@ Y = wholeFile["rate"]
 
 # endregion
 
-def normalizeData(file_to_process, columnName):
-    min_element = file_to_process[columnName].min()
-    max_element = file_to_process[columnName].max()
-    file_to_process[columnName] = 3 * (file_to_process[columnName] - min_element) / (max_element - min_element)
-
 def standardizationData(file_to_process, columnName):
     file_to_process[columnName] = scale(file_to_process[columnName])
+
 
 def convertDictColumnToScore(file_to_process, columnName, uniqueKey):
     i = 0
@@ -92,6 +92,7 @@ def convertDictColumnToScore(file_to_process, columnName, uniqueKey):
         sumForOneCell = 0
     file_to_process[columnName] = sumForAllCells
 
+
 def convertStringColToScore(file_to_process, colName):
     i = 0
     _dict = defaultdict(float)
@@ -110,6 +111,7 @@ def convertStringColToScore(file_to_process, colName):
 
     file_to_process[colName] = lst
 
+
 def dataPreprocessing(file_to_process):
     file_to_process.drop(
         labels=['id', 'homepage', 'status', 'tagline', 'title', 'movie_id'],
@@ -122,27 +124,16 @@ def dataPreprocessing(file_to_process):
     # replace el date b-el year bs: first try.
     file_to_process["release_date"] = [i.year for i in file_to_process["release_date"]]
 
-##################### NLP #################################
+    # region NLP
     file_to_process["overview"].fillna("", inplace=True)
-    nlpData(file_to_process,"overview")
-    standardizationData(file_to_process,"overview")
-    # normalizeData(file_to_process,"overview")
-    print("done nlp with overview")
+    nlpData(file_to_process, "overview")
+    standardizationData(file_to_process, "overview")
+    # print("done nlp with overview")
 
     file_to_process["original_title"].fillna("", inplace=True)
     nlpData(file_to_process, "original_title")
     standardizationData(file_to_process, "original_title")
-    # normalizeData(file_to_process,"overview")
-    print("done nlp with original_title")
-
-
-
-    # region Normalization of scalar data
-    # normalizeData("budget")
-    # normalizeData(file_to_process, "popularity")
-    # normalizeData(file_to_process, "revenue")
-    # normalizeData(file_to_process, "runtime")
-    # normalizeData(file_to_process, "vote_count")
+    # print("done nlp with original_title")
     # endregion
 
     # region Standardization data
@@ -165,19 +156,6 @@ def dataPreprocessing(file_to_process):
     convertStringColToScore(file_to_process, "release_date")
     # endregion
 
-    # region Normalization of non scalar data
-    # normalizeData(file_to_process, "cast")
-    # normalizeData(file_to_process, "crew")
-    # normalizeData(file_to_process, "keywords")
-    # normalizeData(file_to_process, "spoken_languages")
-    # normalizeData(file_to_process, "genres")
-    # normalizeData(file_to_process, "production_companies")
-    # normalizeData(file_to_process, "production_countries")
-    # normalizeData(file_to_process, "original_language")
-    # normalizeData(file_to_process, "release_date")
-
-    # endregion
-
     # region standardization of non scalar data
     standardizationData(file_to_process, "cast")
     standardizationData(file_to_process, "crew")
@@ -197,32 +175,179 @@ def dataPreprocessing(file_to_process):
     file_to_process["rate"] = le.transform(file_to_process["rate"])
     # endregion
 
-    print("overview corr",wholeFile["overview"].corr(wholeFile['rate']))
-    print("original_title corr",wholeFile["original_title"].corr(wholeFile['rate']))
+    # print("overview corr", wholeFile["overview"].corr(wholeFile['rate']))
+    # print("original_title corr", wholeFile["original_title"].corr(wholeFile['rate']))
+
 
 def nlpData(file_to_process, columnName):
-    colList=[]
+    colList = []
     for cell in file_to_process[columnName]:
-        cell = re.sub('[^a-zA-Z]',' ',cell)   #btsheel ay 7aga msh 7arf zay \
+        cell = re.sub('[^a-zA-Z]', ' ', cell)  # btsheel ay 7aga msh 7arf zay \
         cell = cell.lower()
         cell = cell.split()
-        ps = PorterStemmer()                #bta5ud l noun bs
+        ps = PorterStemmer()  # bta5ud l noun bs
         cell = [ps.stem(word) for word in cell
-                  if not word in set(stopwords.words('english'))]
+                if not word in set(stopwords.words('english'))]
         cell = ' '.join(cell)
         colList.append(cell)
 
     cv = CountVectorizer(max_features=100)
     colData = cv.fit_transform(colList).toarray()
-    colList=[]
+    colList = []
     for i in colData:
         s = np.sum(i)
         colList.append(s)
     # colList.append(np.sum(i) for i in colData)
-    file_to_process[columnName]=colList
+    file_to_process[columnName] = colList
 
-def plot_data():
-    pass
+
+# region classifiers
+def DT_Classifier(X_train, X_test, Y_train, Y_test):
+    start_train = timeit.default_timer()
+    DT_Classifier = tree.DecisionTreeClassifier()
+    DT_Classifier.fit(X_train, Y_train)
+    stop_train = timeit.default_timer()
+    DT_train_time = stop_train - start_train
+
+    start_test = timeit.default_timer()
+    predictions = DT_Classifier.predict(X_test)
+    DT_accuracy = np.mean(predictions == Y_test)
+    stop_test = timeit.default_timer()
+    DT_test_time = stop_test - start_test
+    print("Accuracy of decision tree is", DT_accuracy * 100, '%')
+
+
+def Naive_Bias(X_train, X_test, Y_train, Y_test):
+    start_train = timeit.default_timer()
+    gaussian_Classifier = GaussianNB()
+    gaussian_Classifier.fit(X_train, Y_train)
+    stop_train = timeit.default_timer()
+    gaussian_train_time = stop_train - start_train
+
+    start_test = timeit.default_timer()
+    predictions = gaussian_Classifier.predict(X_test)
+    gaussian_accuracy = np.mean(predictions == Y_test)
+    stop_test = timeit.default_timer()
+    gaussian_test_time = stop_test - start_test
+
+    print("Accuracy of Naive Bayes is", gaussian_accuracy * 100, '%')
+
+    # print("Confusion matrix:")
+    # print(confusion_matrix(Y_test, predictions))
+    # print("Classification report:")
+    # print(classification_report(Y_test, predictions))
+
+
+def MLP_Classifier(X_train, X_test, Y_train, Y_test):
+    start_train = timeit.default_timer()
+    MLP_Classifier = MLPClassifier()
+    MLP_Classifier.fit(X_train, Y_train)
+    stop_train = timeit.default_timer()
+    MLP_train_time = stop_train - start_train
+
+    start_test = timeit.default_timer()
+
+    predictions = MLP_Classifier.predict(X_test)
+    MLP_accuracy = np.mean(predictions == Y_test)
+    stop_test = timeit.default_timer()
+
+    MLP_test_time = stop_test - start_test
+    print("Accuracy of MLPClassifier is", MLP_accuracy * 100, '%')
+
+    # print("train time", MLP_train_time)
+    # print("test time", MLP_test_time)
+    #
+    # print("Confusion matrix:")
+    # print(confusion_matrix(Y_test, predictions))
+    # print("Classification report:")
+    # print(classification_report(Y_test, predictions))
+
+
+def logisticRegCLF(X_train, X_test, Y_train, Y_test):
+    logisticRegCLF = LogisticRegression().fit(X_train, Y_train)
+    logisticRegCLF.predict(X_test)
+    accuracyLogReg = logisticRegCLF.score(X_test, Y_test)
+    print("Accuracy of logistic regression: ", accuracyLogReg * 100, '%')
+
+
+def knnCLF(X_train, X_test, Y_train, Y_test):
+    # first choice of hyperpparameter n, n = 5
+    knnCLF = KNeighborsClassifier(n_neighbors=3)
+    knnCLF.fit(X_train, Y_train)
+    Y_pred = knnCLF.predict(X_test)
+    accuracyKNN = np.mean(Y_pred == Y_test)
+    print("KNN (n=5) acuracy: ", accuracyKNN * 100, '%')
+    # print("KNN confusion matrix:")
+    # print(confusion_matrix(Y_test, Y_pred))
+    # print("KNN classification report:")
+    # print(classification_report(Y_test, Y_pred))
+
+    # first choice of hyperpparameter n, n = 5
+    knnCLF = KNeighborsClassifier(n_neighbors=5)
+    knnCLF.fit(X_train, Y_train)
+    Y_pred = knnCLF.predict(X_test)
+    accuracyKNN = np.mean(Y_pred == Y_test)
+    print("KNN (n=3) acuracy: ", accuracyKNN * 100, '%')
+    # print("KNN confusion matrix:")
+    # print(confusion_matrix(Y_test, Y_pred))
+    # print("KNN classification report:")
+    # print(classification_report(Y_test, Y_pred))
+
+    # first choice of hyperpparameter n, n = 10
+    knnCLF = KNeighborsClassifier(n_neighbors=10)
+    knnCLF.fit(X_train, Y_train)
+    Y_pred = knnCLF.predict(X_test)
+    accuracyKNN = np.mean(Y_pred == Y_test)
+    print("KNN (n=10) acuracy: ", accuracyKNN * 100, '%')
+    # print("KNN confusion matrix:")
+    # print(confusion_matrix(Y_test, Y_pred))
+    # print("KNN classification report:")
+    # print(classification_report(Y_test, Y_pred))
+
+
+def AdaBoostCLS(X_train, X_test, Y_train, Y_test):
+    bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=1), algorithm="SAMME.R", n_estimators=100)
+    bdt.fit(X_train, Y_train)
+    y_prediction = bdt.predict(X_test)
+    accuracy = np.mean(y_prediction == Y_test) * 100
+    print("Accuracy of Adaboost is " + str(accuracy) + '%')
+
+    GradientBooster = GradientBoostingClassifier(criterion='mse', warm_start=True, n_estimators=200)
+    GradientBooster.fit(X_train, Y_train)
+    predictions = GradientBooster.predict(X_test)
+    accuracy = np.mean(predictions == Y_test) * 100
+    acc = GradientBooster.score(X_test, Y_test)
+
+    print("Accuracy of Gradient Booster is " + str(accuracy) + '%')
+
+
+def SVM_One_VS_Rest(X_train, X_test, Y_train, Y_test):
+    svm_model_linear_ovr = OneVsRestClassifier(SVC(kernel='linear', C=1)).fit(X_train, Y_train)
+    svm_predictions = svm_model_linear_ovr.predict(X_test)
+    accuracyOVR = svm_model_linear_ovr.score(X_test, Y_test)
+    print('Accuracy of One VS Rest SVM is', accuracyOVR, '%')
+
+
+def SVM_One_VS_One(X_train, X_test, Y_train, Y_test):
+    svm_model_linear_ovo = SVC(kernel='linear', C=1).fit(X_train, Y_train)
+    svm_predictions = svm_model_linear_ovo.predict(X_test)
+    accuracyOVO = svm_model_linear_ovo.score(X_test, Y_test)
+    print('Accuracy of One VS Rest SVM is', accuracyOVO, '%')
+
+
+# endregion
+
+def PCA_DimnRed(X_train, X_test):  # ngrb n8yar 3dd el components b 3 values
+    pca = PCA(n_components=2)
+    print(X_train.shape)
+    new_Xtrain = pca.fit_transform(X_train)
+    print(new_Xtrain.shape)
+
+    print(X_test.shape)
+    new_Xtest = pca.transform(X_test)
+    print(new_Xtest.shape)
+    return new_Xtrain, new_Xtest
+
 
 def main():
     # print("len wholeFile before:", len(wholeFile.columns))
@@ -245,8 +370,49 @@ def main():
 
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
 
+    # region All Features
+    print("***** Classifing with All features - Before PCA *****")
+    DT_Classifier(X_train, X_test, Y_train, Y_test)
+
+    Naive_Bias(X_train, X_test, Y_train, Y_test)
+
+    MLP_Classifier(X_train, X_test, Y_train, Y_test)
+
+    # SVM_One_VS_Rest(X_train , X_test , Y_train, Y_test)
+
+    # SVM_One_VS_One(X_train , X_test , Y_train, Y_test)
+
+    logisticRegCLF(X_train, X_test, Y_train, Y_test)
+
+    knnCLF(X_train, X_test, Y_train, Y_test)
+
+    AdaBoostCLS(X_train, X_test, Y_train, Y_test)
+
+    print("***** Classifing with All features - After PCA *****")
+    newX_train, newX_test = PCA_DimnRed(X_train, X_test)
+
+    DT_Classifier(newX_train, newX_test, Y_train, Y_test)
+
+    Naive_Bias(newX_train, newX_test, Y_train, Y_test)
+
+    MLP_Classifier(newX_train, newX_test, Y_train, Y_test)
+
+    # SVM_One_VS_Rest(newX_train, newX_test, Y_train, Y_test)
+
+    # SVM_One_VS_One(newX_train, newX_test, Y_train, Y_test)
+
+    logisticRegCLF(newX_train, newX_test, Y_train, Y_test)
+
+    knnCLF(newX_train, newX_test, Y_train, Y_test)
+
+    AdaBoostCLS(newX_train, newX_test, Y_train, Y_test)
+    # endregion
+
+    print("*****************************************************")
+
+    # region K-Best
     # region SelectKBest
-    k = 4
+    k = 6
     # selector = SelectKBest(chi2, k=k)
     selector = SelectKBest(f_classif, k=k)
     selctor_fit_transform = selector.fit_transform(X_train, Y_train)
@@ -257,103 +423,51 @@ def main():
     # sns.heatmap(top_corr, annot=True)
     # plt.show()
     # endregion
+    print("***** Classifing with K-best features - Before PCA *****")
+    # region without PCA
 
-    # NOT done yet
-    # region RandomForestClassifier
+    DT_Classifier(X_train[top_features], X_test[top_features], Y_train, Y_test)
 
-    # RF_Classifier = RandomForestClassifier(max_depth=2)
+    Naive_Bias(X_train[top_features], X_test[top_features], Y_train, Y_test)
+
+    MLP_Classifier(X_train[top_features], X_test[top_features], Y_train, Y_test)
+
+    # SVM_One_VS_Rest(X_train[top_features], X_test[top_features], Y_train, Y_test)
+
+    # SVM_One_VS_One(X_train[top_features], X_test[top_features], Y_train, Y_test)
+
+    logisticRegCLF(X_train[top_features], X_test[top_features], Y_train, Y_test)
+
+    knnCLF(X_train[top_features], X_test[top_features], Y_train, Y_test)
+
+    AdaBoostCLS(X_train[top_features], X_test[top_features], Y_train, Y_test)
+
+    # endregion
+    print("***** Classifing with K-best features - After PCA *****")
+
+    # region PCA
+    newX_train, newX_test = PCA_DimnRed(X_train[top_features], X_test[top_features])
 
     # endregion
 
-    # region Decision tree
+    DT_Classifier(newX_train, newX_test, Y_train, Y_test)
 
-    DT_Classifier = tree.DecisionTreeClassifier()
-    DT_Classifier.fit(X_train, Y_train)
-    presictions = DT_Classifier.predict(X_test)
-    accuracy = np.mean(presictions == Y_test)
-    print("Decision tree accuracy =", accuracy * 100)
-    tree.plot_tree(DT_Classifier.fit(X_train, Y_train))  # mafish 7aga bt7sl !!!
-    print("Confusion matrix:")
-    print(confusion_matrix(Y_test, presictions))
-    print("Classification report:")
-    print(classification_report(Y_test, presictions))
+    Naive_Bias(newX_train, newX_test, Y_train, Y_test)
 
-    # endregion
+    MLP_Classifier(newX_train, newX_test, Y_train, Y_test)
 
-    # region Logistic regression
-    logisticRegCLF = LogisticRegression().fit(X_train, Y_train)
-    logisticRegCLF.predict(X_test)
-    accuracyLogReg = logisticRegCLF.score(X_test, Y_test)
-    print("accuracy of logistic regression: ", accuracyLogReg)
+    # SVM_One_VS_Rest(newX_train, newX_test, Y_train, Y_test)
+
+    # SVM_One_VS_One(newX_train, newX_test, Y_train, Y_test)
+
+    logisticRegCLF(newX_train, newX_test, Y_train, Y_test)
+
+    knnCLF(newX_train, newX_test, Y_train, Y_test)
+
+    AdaBoostCLS(newX_train, newX_test, Y_train, Y_test)
 
     # endregion
 
-    # region SVM One Vs Rest
-    # svm_model_linear_ovr = OneVsRestClassifier(SVC(kernel='linear', C=1)).fit(X_train, Y_train)
-    # svm_predictions = svm_model_linear_ovr.predict(X_test)
-    # accuracyOVR = svm_model_linear_ovr.score(X_test, Y_test)
-    # print('One VS Rest SVM accuracy: ', accuracyOVR)
-    # endregion
-
-    # region SVM One Vs One
-    # svm_model_linear_ovo = SVC(kernel='linear', C=1).fit(X_train, Y_train)
-    # svm_predictions = svm_model_linear_ovo.predict(X_test)
-    # accuracyOVO = svm_model_linear_ovo.score(X_test, Y_test)
-    # print('One VS One SVM accuracy: ', accuracyOVO)
-    # endregion
-
-    # region KNN
-    # first choice of hyperpparameter n, n = 5
-    knnCLF = KNeighborsClassifier(n_neighbors=3)
-    knnCLF.fit(X_train,Y_train)
-    Y_pred = knnCLF.predict(X_test)
-    accuracyKNN = np.mean(Y_pred == Y_test)
-    print("KNN (n=5) acuracy: ", accuracyKNN)
-    print("KNN confusion matrix:")
-    print(confusion_matrix(Y_test, Y_pred))
-    print("KNN classification report:")
-    print(classification_report(Y_test, Y_pred))
-
-    # first choice of hyperpparameter n, n = 5
-    knnCLF = KNeighborsClassifier(n_neighbors=5)
-    knnCLF.fit(X_train, Y_train)
-    Y_pred = knnCLF.predict(X_test)
-    accuracyKNN = np.mean(Y_pred == Y_test)
-    print("KNN (n=3) acuracy: ", accuracyKNN)
-    print("KNN confusion matrix:")
-    print(confusion_matrix(Y_test, Y_pred))
-    print("KNN classification report:")
-    print(classification_report(Y_test, Y_pred))
-
-    # first choice of hyperpparameter n, n = 10
-    knnCLF = KNeighborsClassifier(n_neighbors=10)
-    knnCLF.fit(X_train, Y_train)
-    Y_pred = knnCLF.predict(X_test)
-    accuracyKNN = np.mean(Y_pred == Y_test)
-    print("KNN (n=10) acuracy: ", accuracyKNN)
-    print("KNN confusion matrix:")
-    print(confusion_matrix(Y_test, Y_pred))
-    print("KNN classification report:")
-    print(classification_report(Y_test, Y_pred))
-    # endregion
-
-    # region BDT
-    bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=1),
-                             algorithm="SAMME.R",
-                             n_estimators=100)
-    bdt.fit(X_train[top_features], Y_train)
-    y_prediction = bdt.predict(X_test[top_features])
-    accuracy = np.mean(y_prediction == Y_test) * 100
-    print("The achieved accuracy using Adaboost is " + str(accuracy))
-
-    GradientBooster = GradientBoostingClassifier(criterion='mse', warm_start=True, n_estimators=200)
-    GradientBooster.fit(X_train[top_features], Y_train)
-    predictions = GradientBooster.predict(X_test[top_features])
-    accuracy = np.mean(predictions == Y_test) * 100
-    acc = GradientBooster.score(X_test[top_features], Y_test)
-
-    print("The achieved accuracy using Gradient Booster is " + str(accuracy))
-    wholeFile.to_csv("finalOutput.csv", index=False)
-    # endregion
 
 main()
+wholeFile.to_csv("finalOutput.csv", index=False)
