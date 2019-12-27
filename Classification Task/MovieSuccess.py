@@ -2,6 +2,7 @@ import json
 from collections import defaultdict
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from sklearn import tree
 import re
 import nltk
@@ -38,22 +39,32 @@ train_time_list = []
 test_time_list = []
 
 ##
-moviesFile = pd.read_csv('Train Set/tmdb_5000_movies_classification.csv')
-creditsFile = pd.read_csv('Train Set/tmdb_5000_credits.csv')
-testfilemovies = pd.read_excel('movies_samples/samples_tmdb_5000_movies_testing_classification.xlsx')
-testfilecredits = pd.read_csv('movies_samples/samples_tmdb_5000_credits_test.csv')
+moviesFile = pd.read_csv('/home/nourhan/Downloads/Predicting-Movie-Success-master(1)/Predicting-Movie-Success-master/Classification Task/Train Set/tmdb_5000_movies_classification.csv')
 
+creditsFile = pd.read_csv('/home/nourhan/Downloads/Predicting-Movie-Success-master(1)/Predicting-Movie-Success-master/Classification Task/Train Set/tmdb_5000_credits.csv')
+# testfilemovies = pd.read_excel('movies_samples/samples_tmdb_5000_movies_testing_classification.xlsx')
+# testfilecredits = pd.read_csv('movies_samples/samples_tmdb_5000_credits_test.csv')
+# testfilemovies = pd.read_csv('Movies success/tmdb_5000_movies_testing_classification.csv')
+testfilemovies = pd.read_excel('/home/nourhan/Downloads/Predicting-Movie-Success-master(1)/Predicting-Movie-Success-master/tmdb_5000_movies_testing_classification.xlsx')
+
+# testfilecredits = pd.read_csv('Movies success/tmdb_5000_credits_test.csv')
+testfilecredits = pd.read_csv('/home/nourhan/Downloads/Predicting-Movie-Success-master(1)/Predicting-Movie-Success-master/Classification Task/Movies success/tmdb_5000_credits_test.csv')
 # inner y keep rl 7agat el comman fl 2 df bs
-wholeFile = pd.merge(moviesFile, creditsFile, sort=True, how='inner', left_on=['id', 'title'],
-                     right_on=['movie_id', 'title'])
+wholeFile = pd.merge(moviesFile, creditsFile, sort=True, how='left', left_on=['id','title'],
+                     right_on=['movie_id','title'])
+
+
 # wholeFile = pd.read_csv('out.csv')
 # print("Y", type(Y))
 # X = wholeFile.drop(axis=1, labels="rate")
 # Y = wholeFile["rate"]
 
-wholeTestFile = pd.merge(testfilemovies, testfilecredits, sort=True, how='inner', left_on=['id', 'title'],
-                         right_on=['movie_id', 'title'])
-
+wholeTestFile = pd.merge(testfilemovies, testfilecredits, sort=True, how='left', left_on=['id','title'],
+                         right_on=['movie_id','title'])
+print("BEFORE MERGE testfilemovies:", len(testfilemovies))
+print("BEFORE MERGE testfilecredits:", len(testfilecredits))
+print("AFTER MERGE test:", len(wholeTestFile))
+print("AFTER MERGE train:", len(wholeFile))
 
 # endregion
 
@@ -76,7 +87,9 @@ def plot_graphs(list_, classifier_names, title):
     plt.xlabel('Classifiers')
     plt.ylabel(title)
     plt.title(title)
-    plt.xticks(index + bar_width, (classifier_names[0], classifier_names[1], classifier_names[2], classifier_names[3],classifier_names[4],classifier_names[5],classifier_names[6],classifier_names[7],classifier_names[8]))
+    plt.xticks(index + bar_width, (
+    classifier_names[0], classifier_names[1], classifier_names[2], classifier_names[3], classifier_names[4],
+    classifier_names[5], classifier_names[6], classifier_names[7], classifier_names[8]))
     plt.legend()
 
     plt.tight_layout()
@@ -340,10 +353,6 @@ def Naive_Bias(X_train, X_test, Y_train, Y_test):
 
     print("Accuracy of Naive Bayes is", gaussian_accuracy * 100, '%')
     return gaussian_Classifier
-    # print("Confusion matrix:")
-    # print(confusion_matrix(Y_test, predictions))
-    # print("Classification report:")
-    # print(classification_report(Y_test, predictions))
 
 
 def MLP_Classifier(X_train, X_test, Y_train, Y_test):
@@ -448,9 +457,10 @@ def knnCLF(X_train, X_test, Y_train, Y_test):
     # print(classification_report(Y_test, Y_pred))
 
 
-def GradientBoost(X_train, X_test, Y_train, Y_test):
+##
+def GradientBoost(X_train, X_test, Y_train, Y_test):  # sha8al logistic reg
     start_train = timeit.default_timer()
-    GradientBooster = GradientBoostingClassifier(criterion='mse', warm_start=True, n_estimators=200)
+    GradientBooster = GradientBoostingClassifier(criterion='mse', warm_start=True, n_estimators=500)
     GradientBooster.fit(X_train, Y_train)
     stop_train = timeit.default_timer()
     gb_train_time = stop_train - start_train
@@ -465,8 +475,16 @@ def GradientBoost(X_train, X_test, Y_train, Y_test):
     train_time_list.append(gb_train_time)
     test_time_list.append(gb_test_time)
     classifiers_names.append('gb')
-    accuracies_list.append(accuracy/100)
+    accuracies_list.append(accuracy / 100)
     print("Accuracy of Gradient Booster is " + str(accuracy) + '%')
+    print("Confusion matrix:")
+    print(confusion_matrix(Y_test, predictions))
+    print("Classification report:")
+    print(classification_report(Y_test, predictions))
+    sns.heatmap(confusion_matrix(Y_test,predictions), annot=True)
+    plt.show()
+
+    # confusion_matrix(Y_test,predictions)
     return GradientBooster
 
 
@@ -486,7 +504,7 @@ def AdaBoostCLS(X_train, X_test, Y_train, Y_test):
     train_time_list.append(AdaBoost_train_time)
     test_time_list.append(AdaBoost_test_time)
     classifiers_names.append('AdaBoost')
-    accuracies_list.append(accuracy/100)
+    accuracies_list.append(accuracy / 100)
     print("Accuracy of Adaboost is " + str(accuracy) + '%')
     return bdt
 
@@ -563,53 +581,67 @@ def PCA_DimnRedAll(X_train, X_test):
 # endregion
 
 
-def Convert_dict_TestFile(i, col, allcolumnsDict):
+def Convert_dict_TestFile(wholeTestFileNew,i, col, allcolumnsDict):
+    print(col)
     col_List = []
     for cell in wholeTestFile[col]:  # cell: group of dictionaries
-        oneCell = json.loads(cell)
         sumForOneCell = 0
-        if oneCell != np.nan:
-            for list_element in oneCell:
-                for key, value in list_element.items():
-                    if col == 'spoken_languages' or col == 'production_countries':
-                        if key == 'name':
-                            # each dictionary element has: #occurrencess, its score(each occurrence: add Y[i])
-                            if not allcolumnsDict[i][value]:
-                                values = 0
-                                for keys, value in allcolumnsDict[i].items():
-                                    values += value
-                                mean = values / len(allcolumnsDict[i])
-                                sumForOneCell += mean
-                            if allcolumnsDict[i][value]:
-                                sumForOneCell += allcolumnsDict[i][value]
-                    else:
-                        if key == 'id':
-                            # each dictionary element has: #occurrencess, its score(each occurrence: add Y[i])
-                            if not allcolumnsDict[i][value]:
-                                values = 0
-                                for keys, value in allcolumnsDict[i].items():
-                                    values += value
-                                mean = values / len(allcolumnsDict[i])
-                                sumForOneCell += mean
-                            if allcolumnsDict[i][value]:
-                                sumForOneCell += allcolumnsDict[i][value]
+        print("CELL", type(cell))
+        # cell = str(cell)
 
-        elif oneCell == np.nan:
+        if isinstance(cell, float):
+            print("INSIDE NANNN")
             values = 0
             for keys, value in allcolumnsDict[i].items():
                 values += value
             mean = values / len(allcolumnsDict[i])
             sumForOneCell += mean
-        col_List.append(sumForOneCell)
-    wholeTestFile[col] = col_List
+            col_List.append(sumForOneCell)
+        else:
+            # cell = str(cell)
+            oneCell = json.loads(cell)
+            sumForOneCell = 0
+            if oneCell != np.nan:
+                for list_element in oneCell:
+                    for key, value in list_element.items():
+                        if col == 'spoken_languages' or col == 'production_countries':
+                            if key == 'name':
+                                # each dictionary element has: #occurrencess, its score(each occurrence: add Y[i])
+                                if not allcolumnsDict[i][value]:
+                                    values = 0
+                                    for keys, value in allcolumnsDict[i].items():
+                                        values += value
+                                    mean = values / len(allcolumnsDict[i])
+                                    sumForOneCell += mean
+                                if allcolumnsDict[i][value]:
+                                    sumForOneCell += allcolumnsDict[i][value]
+                        else:
+                            if key == 'id':
+                                # each dictionary element has: #occurrencess, its score(each occurrence: add Y[i])
+                                if not allcolumnsDict[i][value]:
+                                    values = 0
+                                    for keys, value in allcolumnsDict[i].items():
+                                        values += value
+                                    mean = values / len(allcolumnsDict[i])
+                                    sumForOneCell += mean
+                                if allcolumnsDict[i][value]:
+                                    sumForOneCell += allcolumnsDict[i][value]
+
+            elif oneCell == np.nan:
+                values = 0
+                for keys, value in allcolumnsDict[i].items():
+                    values += value
+                mean = values / len(allcolumnsDict[i])
+                sumForOneCell += mean
+            col_List.append(sumForOneCell)
+    wholeTestFileNew[col] = col_List
 
 
-def Convert_string_TestFile(i, col, stringColDict):
+def Convert_string_TestFile(wholeTestFileNew,i, col, stringColDict):
     lst = []
     values = 0
-    for cell in wholeTestFile[col]:
+    for cell in wholeTestFileNew[col]:
         if cell != np.nan:
-
             if stringColDict[i][cell]:  # found in train dict
                 lst.append(stringColDict[i][cell])
             if not stringColDict[i][cell]:  # not found
@@ -625,19 +657,19 @@ def Convert_string_TestFile(i, col, stringColDict):
             mean = values / len(stringColDict[i])
             lst.append(mean)
 
-    wholeTestFile[col] = lst
+    wholeTestFileNew[col] = lst
 
 
-def nlpTestFile(i, colName, nlpDictColumns):
+def nlpTestFile(wholeTestFileNew,i, colName, nlpDictColumns):
     colList = []
-    for index in range(len(wholeTestFile[colName])):
-        idCheck = wholeTestFile['id'][index]
+    for index in range(len(wholeTestFileNew[colName])):
+        idCheck = wholeTestFileNew['id'][index]
         if idCheck in nlpDictColumns[
             i].keys():  # bshuf law id el film el ana wa2fa feh fel test mwgod f dict bta3 el nlp
             colList.append(nlpDictColumns[i][idCheck])
         else:
             colList.append(0)
-    wholeTestFile[colName] = colList
+    wholeTestFileNew[colName] = colList
 
 
 def normalizeTest_Data(min_element, max_element, columnName):
@@ -645,8 +677,9 @@ def normalizeTest_Data(min_element, max_element, columnName):
 
 
 def Testing(X_train, Y_train, trainCopyFile, allcolumnsDict, stringColDict, nlpDictColumns):
+
     wholeTestFile.drop(
-        labels=['homepage', 'status', 'title', 'movie_id'],
+        labels=['homepage', 'status', 'title','movie_id'],
         axis=1, inplace=True)
     wholeTestFile.replace(['', ' ', [[]], [], None, {}], np.nan, inplace=True)
 
@@ -654,76 +687,107 @@ def Testing(X_train, Y_train, trainCopyFile, allcolumnsDict, stringColDict, nlpD
     # replace el date b-el year bs: first try.
     wholeTestFile["release_date"] = [i.year for i in wholeTestFile["release_date"]]
 
+    wholeTestFileNew = wholeTestFile
+    wholeTestFileNew = wholeTestFileNew.iloc[:, 0:19]
+
     # region Dictionary columns
 
     ColumnNamesList = ['genres', 'keywords', 'production_companies', 'production_countries', 'spoken_languages', 'cast',
                        'crew']
     for i in range(len(ColumnNamesList)):
-        Convert_dict_TestFile(i, ColumnNamesList[i], allcolumnsDict)
+        wholeTestFileNew[ColumnNamesList[i]].fillna("", inplace=True)
+        Convert_dict_TestFile(wholeTestFileNew,i, ColumnNamesList[i], allcolumnsDict)
 
     # endregion
 
     # region String Columns
     stringColumnsNames = ['original_language', 'release_date']
     for i in range(len(stringColumnsNames)):
-        Convert_string_TestFile(i, stringColumnsNames[i], stringColDict)
+        Convert_string_TestFile(wholeTestFileNew,i, stringColumnsNames[i], stringColDict)
     # endregion
 
     # region NLP
     columnsNLP = ['original_title', 'overview', 'tagline']
     for i in range(len(columnsNLP)):
-        nlpTestFile(i, columnsNLP[i], nlpDictColumns)
+        nlpTestFile(wholeTestFileNew,i, columnsNLP[i], nlpDictColumns)
     # endregion
 
     # region standardization
-    standardizationData(wholeTestFile, "popularity")
-    standardizationData(wholeTestFile, "revenue")
-    standardizationData(wholeTestFile, "runtime")
-    standardizationData(wholeTestFile, "vote_count")
-    standardizationData(wholeTestFile, "budget")
-    standardizationData(wholeTestFile, "cast")
-    standardizationData(wholeTestFile, "crew")
-    standardizationData(wholeTestFile, "keywords")
-    standardizationData(wholeTestFile, "spoken_languages")
-    standardizationData(wholeTestFile, "genres")
-    standardizationData(wholeTestFile, "production_companies")
-    standardizationData(wholeTestFile, "production_countries")
-    standardizationData(wholeTestFile, "original_language")
-    standardizationData(wholeTestFile, "release_date")
+    standardizationData(wholeTestFileNew, "popularity")
+    standardizationData(wholeTestFileNew, "revenue")
+    standardizationData(wholeTestFileNew, "runtime")
+    standardizationData(wholeTestFileNew, "vote_count")
+    standardizationData(wholeTestFileNew, "budget")
+    standardizationData(wholeTestFileNew, "cast")
+    standardizationData(wholeTestFileNew, "crew")
+    standardizationData(wholeTestFileNew, "keywords")
+    standardizationData(wholeTestFileNew, "spoken_languages")
+    standardizationData(wholeTestFileNew, "genres")
+    standardizationData(wholeTestFileNew, "production_companies")
+    standardizationData(wholeTestFileNew, "production_countries")
+    standardizationData(wholeTestFileNew, "original_language")
+    standardizationData(wholeTestFileNew, "release_date")
     # endregion
-    wholeTestFile.drop(labels=['id'], axis=1, inplace=True)
+    wholeTestFileNew.drop(labels=['id'], axis=1, inplace=True)
 
     # for colname in trainCopyFile:
     #     min, max = normalizeData(trainCopyFile,colname)
     #     normalizeTest_Data(min,max,colname)
 
     le = LabelEncoder()
-    le.fit(wholeTestFile["rate"])
-    wholeTestFile["rate"] = le.transform(wholeTestFile["rate"])
-    print("wholeTestFile[rate]", wholeTestFile["rate"])
-    X_test = wholeTestFile.drop(axis=1, labels="rate")
+    le.fit(wholeTestFileNew["rate"])
+    wholeTestFileNew["rate"] = le.transform(wholeTestFileNew["rate"])
+    print("wholeTestFile[rate]", wholeTestFileNew["rate"])
 
-    Y_test = wholeTestFile["rate"]
+    # wholeTestFileNew.drop(labels=['original_title', 'overview', 'tagline'], axis=1, inplace=True)
+
+    wholeTestFileNew["release_date"] = wholeTestFileNew["release_date"].astype('datetime64[ns]')
+    # replace el date b-el year bs: first try.
+    wholeTestFileNew["release_date"] = [i.year for i in wholeTestFileNew["release_date"]]
+
+    median = wholeTestFileNew['release_date'].median()
+    wholeTestFileNew['release_date'].fillna(median, inplace=True)
+
+    median = wholeTestFileNew['runtime'].median()
+    wholeTestFileNew['runtime'].fillna(median, inplace=True)
+
+    median = wholeTestFileNew['revenue'].median()
+    wholeTestFileNew['revenue'].fillna(median, inplace=True)
+
+    median = wholeTestFileNew['popularity'].median()
+    wholeTestFileNew['popularity'].fillna(median, inplace=True)
+
+    median = wholeTestFileNew['vote_count'].median()
+    wholeTestFileNew['vote_count'].fillna(median, inplace=True)
+
+
+    X_test = wholeTestFileNew.drop(axis=1, labels="rate")
+
+    Y_test = wholeTestFileNew["rate"]
 
     # scaler = StandardScaler()
     # scaler.fit(X_train)
     # X_train = scaler.transform(X_train)
     # X_test = scaler.transform(X_test)
 
-    # region Classifiers
-    print("Testing")
-    AdaBoostCLS(X_train, X_test, Y_train, Y_test)
-    GradientBoost(X_train, X_test, Y_train, Y_test)
-    DT_Classifier(X_train, X_test, Y_train, Y_test)
-    Naive_Bias(X_train, X_test, Y_train, Y_test)
-    MLP_Classifier(X_train, X_test, Y_train, Y_test)
-    logisticRegCLF(X_train, X_test, Y_train, Y_test)
-    knnCLF(X_train, X_test, Y_train, Y_test)
-    # SVM_One_VS_Rest(X_train, X_test, Y_train, Y_test)
-    # SVM_One_VS_One(X_train, X_test, Y_train, Y_test)
-
-    # endregion
-    wholeTestFile.to_csv("finalOutputTest.csv", index=False)
+    # # region Classifiers
+    # print("Testing")
+    # AdaBoostCLS(X_train, X_test, Y_train, Y_test)
+    # GradientBoost(X_train, X_test, Y_train, Y_test)
+    # DT_Classifier(X_train, X_test, Y_train, Y_test)
+    # Naive_Bias(X_train, X_test, Y_train, Y_test)
+    # MLP_Classifier(X_train, X_test, Y_train, Y_test)
+    # logisticRegCLF(X_train, X_test, Y_train, Y_test)
+    # knnCLF(X_train, X_test, Y_train, Y_test)
+    # #SVM_One_VS_One(X_train,Y_train,X_test,Y_test)
+    #
+    # #SVM_One_VS_Rest(X_train,Y_train,X_test,Y_test)
+    # # SVM_One_VS_Rest(X_train, X_test, Y_train, Y_test)
+    # # SVM_One_VS_One(X_train, X_test, Y_train, Y_test)
+    #
+    # # endregion
+    wholeTestFileNew.to_csv("finalOutputTest.csv", index=False)
+    return X_test, Y_test
 
 
 def main():
@@ -745,7 +809,9 @@ def main():
     # plt.matshow(wholeFile.corr())
     # plt.show()
 
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+    # X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+    X_test, Y_test = Testing(X, Y, TrainCopyFile, allcolDict, stringColDict, nlpDictColumns)
+    X_train, Y_train = X, Y
 
     '''print(type(X_train))
     print(X_train.shape)
@@ -867,10 +933,10 @@ def main():
     #
     #     np.save('classifiers_names.npy', classifiers_names)
     #     #endregion
-
-    plot_graphs(accuracies_list, classifiers_names, 'Accuracies')
-    plot_graphs(train_time_list, classifiers_names, 'training time')
-    plot_graphs(test_time_list, classifiers_names, 'testing time')
+    #
+    # plot_graphs(accuracies_list, classifiers_names, 'Accuracies')
+    # plot_graphs(train_time_list, classifiers_names, 'training time')
+    # plot_graphs(test_time_list, classifiers_names, 'testing time')
 
     print("_____________________________________________________")
     print("***** Classifing with All features - After PCA *****")
@@ -959,7 +1025,6 @@ def main():
     GradientBoost(newX_train, newX_test, Y_train, Y_test)
     # endregion
     print("__________________________________________________________")
-    Testing(X, Y, TrainCopyFile, allcolDict, stringColDict, nlpDictColumns)
 
 
 main()
